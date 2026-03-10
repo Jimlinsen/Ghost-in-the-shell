@@ -70,7 +70,33 @@ ${soul.taboos}
 
 ${hr}
 
-<!-- World Seed: ${world.tradition_name} | "${world.tagline}" -->
+## World: ${world.tradition_name}
+> 「${world.tagline}」
+
+**Cosmogony** — ${world.cosmogony}
+
+**Ontology** — ${world.ontology}
+
+**Time** — ${world.time}
+
+**Fate** — ${world.fate}
+
+**Divine & Human** — ${world.divine_human}
+
+**Death** — ${world.death}
+
+**Core Tension** — ${world.tension}
+
+**Aesthetic** — ${world.aesthetic}
+
+**Symbols** — ${world.symbols}
+
+**Seed Essence**
+
+${world.seed_essence}
+
+${hr}
+
 <!-- nutshell: https://github.com/lingxi-world/nutshell -->
 `;
 }
@@ -113,10 +139,27 @@ ${hr}
 
 ## World Seed Reference
 
-**Tradition**: ${world.tradition_name}
-**Core Tension**: ${world.tension?.slice(0, 120)}…
-**Aesthetic DNA**: ${world.aesthetic?.slice(0, 120)}…
-**Seed Essence**: ${world.seed_essence?.slice(0, 200)}…
+**Tradition**: ${world.tradition_name} | 「${world.tagline}」
+
+**Cosmogony**: ${world.cosmogony}
+
+**Ontology**: ${world.ontology}
+
+**Time**: ${world.time}
+
+**Fate**: ${world.fate}
+
+**Divine & Human**: ${world.divine_human}
+
+**Death**: ${world.death}
+
+**Core Tension**: ${world.tension}
+
+**Aesthetic**: ${world.aesthetic}
+
+**Symbols**: ${world.symbols}
+
+**Seed Essence**: ${world.seed_essence}
 
 ${hr}
 
