@@ -201,11 +201,27 @@ program
         language: opts.language === "auto" ? undefined : opts.language,
       }, onProgress);
 
+      const s = bundle.soul;
+      const w = bundle.world_seed;
+      const trunc = (str: string | undefined, n: number) =>
+        str ? (str.length > n ? str.slice(0, n) + "…" : str) : "—";
+
       console.log();
       console.log(chalk.yellow("─".repeat(58)));
-      console.log(chalk.bold.yellow(`  ✦ ${bundle.soul.character_name}`));
-      console.log(chalk.dim(`  ${bundle.soul.world_bond}`));
+      console.log(chalk.bold.yellow(`  ✦ ${s.character_name}`));
+      console.log(chalk.dim(`  ${s.world_bond}`));
       console.log(chalk.yellow("─".repeat(58)));
+      console.log();
+      console.log(chalk.bold.cyan("  界的厚度诊断"));
+      console.log(chalk.dim("  ┄".repeat(28)));
+      console.log(`  ${chalk.cyan("层⁶ 神话底座")}  ${chalk.white(trunc(w.tradition_name + " — " + w.tagline, 44))}`);
+      console.log(`  ${chalk.cyan("层⁵ 历史节律")}  ${chalk.white(trunc(s.ideological_root, 44))}`);
+      const tabooCount = (s.taboos?.match(/\d+\./g) || []).length || 3;
+      console.log(`  ${chalk.cyan("层⁴ 本体承诺")}  ${chalk.white(`${tabooCount} 条禁区已锚定`)}`);
+      console.log(`  ${chalk.cyan("层³ 价值序列")}  ${chalk.white(trunc(s.stance, 44))}`);
+      console.log(`  ${chalk.cyan("层² 认知风格")}  ${chalk.white(trunc(s.cognitive_style, 44))}`);
+      console.log(`  ${chalk.cyan("层¹ 声线")}      ${chalk.white(trunc(s.voice, 44))}`);
+      console.log(chalk.dim("  ┄".repeat(28)));
       console.log();
 
       const outDir = opts.output;
