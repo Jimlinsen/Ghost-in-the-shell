@@ -97,7 +97,7 @@ ${world.seed_essence}
 
 ${hr}
 
-<!-- nutshell: https://github.com/lingxi-world/nutshell -->
+<!-- nutshell: https://github.com/Jimlinsen/Ghost-in-the-shell -->
 `;
 }
 
@@ -163,7 +163,7 @@ ${hr}
 
 ${hr}
 
-<!-- nutshell: https://github.com/lingxi-world/nutshell -->
+<!-- nutshell: https://github.com/Jimlinsen/Ghost-in-the-shell -->
 `;
 }
 
@@ -203,7 +203,7 @@ ${soul.failure_modes}
 
 ${hr}
 
-<!-- nutshell: https://github.com/lingxi-world/nutshell -->
+<!-- nutshell: https://github.com/Jimlinsen/Ghost-in-the-shell -->
 `;
 }
 

@@ -310,7 +310,7 @@ Otherness doesn't come from personality checklists. It comes from **deep roots**
 ## Contributing
 
 ```bash
-git clone https://github.com/lingxi-world/nutshell
+git clone https://github.com/Jimlinsen/Ghost-in-the-shell
 cd nutshell
 npm install
 npm run dev

@@ -21,7 +21,7 @@
     "eslint": "^9.0.0"
   },
   "engines": { "node": ">=18.0.0" },
-  "repository": { "type": "git", "url": "https://github.com/lingxi-world/nutshell" },
+  "repository": { "type": "git", "url": "https://github.com/Jimlinsen/Ghost-in-the-shell" },
   "license": "MIT",
   "keywords": ["ai-characters","soul-alchemy","world-building","mythology","openclaw","sillytavern","llm"]
 }

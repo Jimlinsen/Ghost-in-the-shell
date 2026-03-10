@@ -76,7 +76,7 @@ If you have expertise in mythology, comparative religion, or folk literature, we
 ## Development Setup
 
 ```bash
-git clone https://github.com/lingxi-world/nutshell
+git clone https://github.com/Jimlinsen/Ghost-in-the-shell
 cd nutshell
 npm install
 

@@ -33,7 +33,7 @@ async function fetchSummary(title: string, lang: "en" | "zh" = "en"): Promise<Wi
   const url = `${base}/${encodeURIComponent(title.replace(/ /g, "_"))}`;
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "nutshell/0.1.0 (https://github.com/lingxi-world/nutshell)" },
+      headers: { "User-Agent": "nutshell/0.1.0 (https://github.com/Jimlinsen/Ghost-in-the-shell)" },
     });
     if (!res.ok) return null;
     const data = await res.json() as { title: string; extract: string; content_urls?: { desktop?: { page?: string } } };
