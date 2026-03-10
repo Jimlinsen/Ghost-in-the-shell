@@ -1,0 +1,14 @@
+{
+  "name": "@nutshell/core",
+  "version": "0.1.0",
+  "description": "World seed + soul alchemy engine for nutshell",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": { "import": "./dist/index.js", "types": "./dist/index.d.ts" } },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": { "typescript": "^5.4.0", "@types/node": "^20.0.0" }
+}
