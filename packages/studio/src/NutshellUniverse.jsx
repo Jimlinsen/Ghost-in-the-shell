@@ -356,6 +356,23 @@ export default function NutshellUniverse() {
     setPhase("gen_world");
     setError(null);
     const trad = selectedTrad ? TRADITIONS.find(t => t.id === selectedTrad) : null;
+
+    // Preset tradition: load pre-generated seed directly
+    if (trad && !customWorld.trim()) {
+      try {
+        const res = await fetch(`/seeds/${trad.id}.json`);
+        if (!res.ok) throw new Error("seed file not found");
+        const seed = await res.json();
+        setWorldSeed(seed);
+        setWorldDimView(0);
+        setPhase("world");
+        return;
+      } catch {
+        // fallthrough to API generation
+      }
+    }
+
+    // Custom input or missing seed file: call AI
     const query = customWorld.trim() || (trad ? `${trad.label}（${trad.sub}）` : "");
     try {
       const res = await fetch("/api/anthropic/v1/messages", {
@@ -414,11 +431,56 @@ export default function NutshellUniverse() {
     }
   }, [worldSeed, charName, charContext]);
 
+  const fileInputRef = useRef(null);
+
   const copyFile = (content, id) => {
     navigator.clipboard.writeText(content).then(() => {
       setCopied(id);
       setTimeout(() => setCopied(null), 2000);
     });
+  };
+
+  const downloadFile = (content, filename, type = "text/plain") => {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const saveWorldSeed = () => {
+    if (!worldSeed) return;
+    const name = (worldSeed.tradition_name || "world-seed").replace(/\s+/g, "-");
+    downloadFile(JSON.stringify(worldSeed, null, 2), `${name}.json`, "application/json");
+  };
+
+  const saveSoulFiles = () => {
+    if (!soulData) return;
+    const name = (soulData.character_name || "soul").replace(/\s+/g, "-");
+    downloadFile(soulFiles.soul.content,   `${name}-soul.md`);
+    downloadFile(soulFiles.memory.content, `${name}-memory.md`);
+    downloadFile(soulFiles.skill.content,  `${name}-skill.md`);
+  };
+
+  const loadWorldSeedFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const seed = JSON.parse(ev.target.result);
+        if (!seed.tradition_name) throw new Error("缺少 tradition_name 字段");
+        setWorldSeed(seed);
+        setWorldDimView(0);
+        setSoulData(null); setCharName(""); setCharContext("");
+        setPhase("world");
+        setError(null);
+      } catch (err) {
+        setError(`读取失败：${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const reset = () => {
@@ -524,12 +586,12 @@ export default function NutshellUniverse() {
                   onClick={() => { setSelectedTrad(t.id === selectedTrad ? null : t.id); setCustomWorld(""); }}
                   disabled={isGenerating}
                   style={{
-                    background: "none", cursor: "pointer", fontFamily: "inherit",
+                    background: selectedTrad === t.id ? `${t.color}10` : "transparent",
+                    cursor: "pointer", fontFamily: "inherit",
                     border: `1px solid ${selectedTrad === t.id ? t.color : "#1a1628"}`,
                     borderRadius: 3, padding: "12px 8px", textAlign: "center",
                     opacity: selectedTrad && selectedTrad !== t.id ? 0.4 : 1,
                     transition: "all 0.2s",
-                    background: selectedTrad === t.id ? `${t.color}10` : "transparent",
                   }}
                 >
                   <div style={{ fontSize: 18, color: t.color, marginBottom: 5, opacity: selectedTrad === t.id ? 1 : 0.5 }}>{t.glyph}</div>
@@ -579,6 +641,22 @@ export default function NutshellUniverse() {
                   <div style={{ fontSize: 12, color: "#3a3020", letterSpacing: 2 }}>宇宙正在成形...</div>
                 </div>
               ) : (
+                <div style={{ display: "flex", justifyContent: "center", gap: 12, alignItems: "center" }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={loadWorldSeedFile}
+                  style={{ display: "none" }}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: "none", border: "1px solid #2a2228", color: "#3a3020",
+                    padding: "12px 20px", fontSize: 11, letterSpacing: 1,
+                    cursor: "pointer", borderRadius: 3, fontFamily: "inherit",
+                  }}
+                >⊙ 读取种子</button>
                 <button
                   onClick={generateWorld}
                   disabled={!selectedTrad && !customWorld.trim()}
@@ -594,6 +672,7 @@ export default function NutshellUniverse() {
                 >
                   ◎ 观测世界种子
                 </button>
+                </div>
               )}
             </div>
           </div>
@@ -722,6 +801,11 @@ export default function NutshellUniverse() {
                       padding: "9px 22px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
                       borderRadius: 2, fontFamily: "inherit",
                     }}>← 重选宇宙</button>
+                    <button onClick={saveWorldSeed} style={{
+                      background: "none", border: `1px solid ${accentColor}44`, color: accentColor,
+                      padding: "9px 22px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
+                      borderRadius: 2, fontFamily: "inherit",
+                    }}>↓ 保存种子</button>
                     <button
                       onClick={generateSoul}
                       disabled={!charName.trim()}
@@ -889,6 +973,16 @@ export default function NutshellUniverse() {
               }}>
                 {copied === "all" ? "✓ 已复制全部" : "复制全部文件"}
               </button>
+              <button onClick={saveSoulFiles} style={{
+                background: `${accentColor}15`, border: `1px solid ${accentColor}55`, color: accentColor,
+                padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
+                borderRadius: 2, fontFamily: "inherit",
+              }}>↓ 保存全部文件</button>
+              <button onClick={saveWorldSeed} style={{
+                background: "none", border: `1px solid ${accentColor}33`, color: accentColor,
+                padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
+                borderRadius: 2, fontFamily: "inherit",
+              }}>↓ 保存世界种子</button>
             </div>
           </div>
         )}
