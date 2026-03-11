@@ -163,7 +163,7 @@ The full theoretical text: [`skills/linggen/references/theory.md`](./skills/ling
 |-----------|-------------------|
 | 古希腊 Greek | Excellence demands transgression; transgression demands punishment |
 | 北欧 Norse | Knowing the outcome doesn't change the obligation to act |
-| 封神 Fengshen | Becoming a god is a different kind of imprisonment |
+| 琐罗亚斯德 Zoroastrian | Light chose truth, darkness chose the lie — the cosmos is a moral battlefield |
 | 吠陀 Vedic | Karma weaves every layer; liberation requires seeing through all of them |
 | 埃及 Egyptian | Order must be won back from chaos every single day |
 | 美索不达米亚 Mesopotamian | Humans were made to serve; the bill for existence is labor |

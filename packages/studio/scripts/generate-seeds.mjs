@@ -12,7 +12,7 @@ mkdirSync(OUT_DIR, { recursive: true });
 const TRADITIONS = [
   { id: "greek",        label: "古希腊",      sub: "Olympic Pantheon" },
   { id: "norse",        label: "北欧神话",    sub: "Norse Mythology" },
-  { id: "fengshen",     label: "封神演义",    sub: "Investiture of Gods" },
+  { id: "zoroastrian",  label: "琐罗亚斯德教", sub: "Zoroastrianism" },
   { id: "vedic",        label: "印度吠陀",    sub: "Vedic Tradition" },
   { id: "egyptian",     label: "埃及神话",    sub: "Kemetic" },
   { id: "mesopotamian", label: "美索不达米亚", sub: "Sumerian-Akkadian" },
@@ -22,6 +22,35 @@ const TRADITIONS = [
   { id: "mayan",        label: "玛雅宇宙",    sub: "Maya Cosmology" },
   { id: "tibetan",      label: "藏传密教",    sub: "Vajrayana" },
   { id: "aztec",        label: "阿兹特克",    sub: "Aztec Cosmology" },
+  // ── 架空世界 ──────────────────────────────────────────────────────────────
+  { id: "hp",         label: "哈利·波特",    sub: "Harry Potter / J.K. Rowling",           fiction: true },
+  { id: "lotr",       label: "中土大陆",     sub: "The Lord of the Rings / Tolkien",        fiction: true },
+  { id: "got",        label: "冰与火之歌",   sub: "Game of Thrones / George R.R. Martin",   fiction: true },
+  { id: "witcher",    label: "巫师世界",     sub: "The Witcher / Andrzej Sapkowski",         fiction: true },
+  { id: "marvel",     label: "漫威宇宙",     sub: "Marvel Universe / Stan Lee",             fiction: true },
+  { id: "dc",         label: "DC宇宙",       sub: "DC Universe",                            fiction: true },
+  { id: "akira",      label: "AKIRA",        sub: "AKIRA / Katsuhiro Otomo / Neo-Tokyo",    fiction: true },
+  { id: "naruto",     label: "火影忍者",     sub: "Naruto / Masashi Kishimoto",             fiction: true },
+  { id: "onepiece",   label: "海贼王",       sub: "One Piece / Eiichiro Oda",               fiction: true },
+  { id: "aot",        label: "进击的巨人",   sub: "Attack on Titan / Hajime Isayama",       fiction: true },
+  { id: "fma",        label: "钢之炼金术师",  sub: "Fullmetal Alchemist / Hiromu Arakawa",  fiction: true },
+  { id: "eva",        label: "新世纪福音战士", sub: "Neon Genesis Evangelion / Anno Hideaki", fiction: true },
+  { id: "bleach",     label: "死神",         sub: "Bleach / Tite Kubo",                     fiction: true },
+  { id: "dragonball", label: "龙珠",         sub: "Dragon Ball / Akira Toriyama",           fiction: true },
+  { id: "starwars",   label: "星球大战",     sub: "Star Wars / George Lucas",               fiction: true },
+  { id: "dune",       label: "沙丘",         sub: "Dune / Frank Herbert",                   fiction: true },
+  { id: "matrix",     label: "黑客帝国",     sub: "The Matrix / Wachowski",                 fiction: true },
+  { id: "foundation", label: "基地",         sub: "Foundation / Isaac Asimov",              fiction: true },
+  { id: "rickmorty",  label: "瑞克与莫蒂",   sub: "Rick and Morty / Dan Harmon & Justin Roiland", fiction: true },
+  { id: "xiyouji",    label: "西游记",       sub: "Journey to the West / Wu Cheng'en",      fiction: true },
+  { id: "fengshen",   label: "封神演义",     sub: "Investiture of the Gods / Xu Zhonglin",  fiction: true },
+  { id: "threebody",  label: "三体",         sub: "Three-Body Problem / Liu Cixin",          fiction: true },
+  { id: "wuxia",      label: "金庸武侠",     sub: "Wuxia / Jin Yong",                       fiction: true },
+  { id: "hongloumeng",label: "红楼梦",       sub: "Dream of Red Chamber / Cao Xueqin",      fiction: true },
+  { id: "darksouls",  label: "黑暗之魂",     sub: "Dark Souls / FromSoftware / Hidetaka Miyazaki", fiction: true },
+  { id: "zelda",      label: "塞尔达传说",   sub: "The Legend of Zelda / Nintendo / Shigeru Miyamoto", fiction: true },
+  { id: "elden",      label: "艾尔登法环",   sub: "Elden Ring / FromSoftware / George R.R. Martin", fiction: true },
+  { id: "genshin",    label: "原神",         sub: "Genshin Impact / miHoYo / Teyvat",       fiction: true },
 ];
 
 const PROMPT_PREFIX = `你是世界种子生成器，精通神话学（坎贝尔、埃利亚德）、比较宗教学（缪勒、奥托）、民俗文学（普罗普）。
@@ -69,8 +98,15 @@ function extractJson(raw) {
   return JSON.parse(match[0]);
 }
 
+const FICTION_SUFFIX = `
+
+注意：这是架空世界，不是真实神话传统。
+请基于这个作品的内在逻辑和意识形态基底来生成世界种子，而非现实世界的文化。
+提炼这个作品世界独有的感知框架——它的宇宙观、时间观、人物与命运的关系、核心张力。`;
+
 async function generateOne(trad, attempt = 1) {
-  const prompt = `${PROMPT_PREFIX}${trad.label}（${trad.sub}）`;
+  const suffix = trad.fiction ? `${trad.label}（${trad.sub}）${FICTION_SUFFIX}` : `${trad.label}（${trad.sub}）`;
+  const prompt = `${PROMPT_PREFIX}${suffix}`;
   if (attempt > 1) console.log(`  ↺  ${trad.label} 重试 #${attempt}...`);
   else console.log(`  ⟳  ${trad.label}...`);
   try {

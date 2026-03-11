@@ -3,18 +3,61 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const TRADITIONS = [
-  { id: "greek",         label: "古希腊",     glyph: "☽",  color: "#7eb8d4", sub: "Olympic Pantheon" },
-  { id: "norse",         label: "北欧神话",   glyph: "ᚱ",  color: "#9b8ecf", sub: "Norse Mythology" },
-  { id: "fengshen",      label: "封神演义",   glyph: "☯",  color: "#d4976a", sub: "Investiture of Gods" },
-  { id: "vedic",         label: "印度吠陀",   glyph: "ॐ",  color: "#d4b96a", sub: "Vedic Tradition" },
-  { id: "egyptian",      label: "埃及神话",   glyph: "𓂀", color: "#c9a84c", sub: "Kemetic" },
-  { id: "mesopotamian",  label: "美索不达米亚",glyph: "𒀭", color: "#b07a5a", sub: "Sumerian-Akkadian" },
-  { id: "celtic",        label: "凯尔特",     glyph: "᛫",  color: "#7dba8a", sub: "Celtic Mythology" },
-  { id: "shinto",        label: "日本神道",   glyph: "⛩", color: "#e8a0a0", sub: "Shinto" },
-  { id: "taoist",        label: "道教神话",   glyph: "⊙",  color: "#a8c5d4", sub: "Taoist Mythology" },
-  { id: "mayan",         label: "玛雅宇宙",   glyph: "❋",  color: "#8ecf9b", sub: "Maya Cosmology" },
-  { id: "tibetan",       label: "藏传密教",   glyph: "ༀ",  color: "#cf9b8e", sub: "Vajrayana" },
-  { id: "aztec",         label: "阿兹特克",   glyph: "✦",  color: "#d4c06a", sub: "Aztec Cosmology" },
+  { id: "greek",        label: "古希腊",      glyph: "☽",  color: "#7eb8d4", sub: "Olympic Pantheon",    category: "myth" },
+  { id: "norse",        label: "北欧神话",    glyph: "ᚱ",  color: "#9b8ecf", sub: "Norse Mythology",      category: "myth" },
+  { id: "zoroastrian",  label: "琐罗亚斯德",  glyph: "🔥", color: "#d4976a", sub: "Zoroastrianism",       category: "myth" },
+  { id: "vedic",        label: "印度吠陀",    glyph: "ॐ",  color: "#d4b96a", sub: "Vedic Tradition",      category: "myth" },
+  { id: "egyptian",     label: "埃及神话",    glyph: "𓂀", color: "#c9a84c", sub: "Kemetic",              category: "myth" },
+  { id: "mesopotamian", label: "美索不达米亚", glyph: "𒀭", color: "#b07a5a", sub: "Sumerian-Akkadian",    category: "myth" },
+  { id: "celtic",       label: "凯尔特",      glyph: "᛫",  color: "#7dba8a", sub: "Celtic Mythology",     category: "myth" },
+  { id: "shinto",       label: "日本神道",    glyph: "⛩", color: "#e8a0a0", sub: "Shinto",               category: "myth" },
+  { id: "taoist",       label: "道教神话",    glyph: "⊙",  color: "#a8c5d4", sub: "Taoist Mythology",     category: "myth" },
+  { id: "mayan",        label: "玛雅宇宙",    glyph: "❋",  color: "#8ecf9b", sub: "Maya Cosmology",       category: "myth" },
+  { id: "tibetan",      label: "藏传密教",    glyph: "ༀ",  color: "#cf9b8e", sub: "Vajrayana",            category: "myth" },
+  { id: "aztec",        label: "阿兹特克",    glyph: "✦",  color: "#d4c06a", sub: "Aztec Cosmology",      category: "myth" },
+  // ── 西方奇幻 ──────────────────────────────────────────────────────────────
+  { id: "hp",           label: "哈利·波特",   glyph: "⚡",  color: "#7b5ea7", sub: "Harry Potter",         category: "fiction", subcategory: "western-fantasy" },
+  { id: "lotr",         label: "中土大陆",    glyph: "◉",  color: "#8b7355", sub: "Middle-earth",          category: "fiction", subcategory: "western-fantasy" },
+  { id: "got",          label: "冰与火之歌",  glyph: "❄",  color: "#4a6680", sub: "Game of Thrones",       category: "fiction", subcategory: "western-fantasy" },
+  { id: "witcher",      label: "巫师世界",    glyph: "⊕",  color: "#2d4a2d", sub: "The Witcher",           category: "fiction", subcategory: "western-fantasy" },
+  // ── 超级英雄 ──────────────────────────────────────────────────────────────
+  { id: "marvel",       label: "漫威宇宙",    glyph: "⭐",  color: "#c41e3a", sub: "Marvel Universe",      category: "fiction", subcategory: "superhero" },
+  { id: "dc",           label: "DC宇宙",      glyph: "◈",  color: "#1a56c4", sub: "DC Universe",           category: "fiction", subcategory: "superhero" },
+  { id: "akira",        label: "AKIRA",       glyph: "◎",  color: "#cc1100", sub: "AKIRA / Neo-Tokyo",     category: "fiction", subcategory: "superhero" },
+  // ── 日本动漫 ──────────────────────────────────────────────────────────────
+  { id: "naruto",       label: "火影忍者",    glyph: "✦",  color: "#e8855a", sub: "Naruto",                category: "fiction", subcategory: "anime" },
+  { id: "onepiece",     label: "海贼王",      glyph: "⚓",  color: "#3399cc", sub: "One Piece",             category: "fiction", subcategory: "anime" },
+  { id: "aot",          label: "进击的巨人",  glyph: "⟁",  color: "#7a5c3a", sub: "Attack on Titan",       category: "fiction", subcategory: "anime" },
+  { id: "fma",          label: "钢之炼金术师", glyph: "⊗",  color: "#cc8833", sub: "Fullmetal Alchemist",  category: "fiction", subcategory: "anime" },
+  { id: "eva",          label: "新世纪福音战士", glyph: "◇", color: "#6633aa", sub: "Neon Genesis Evangelion", category: "fiction", subcategory: "anime" },
+  { id: "bleach",       label: "死神",        glyph: "☽",  color: "#1a1a2e", sub: "Bleach",                category: "fiction", subcategory: "anime" },
+  { id: "dragonball",   label: "龙珠",        glyph: "★",  color: "#f7941d", sub: "Dragon Ball",           category: "fiction", subcategory: "anime" },
+  // ── 科幻 ──────────────────────────────────────────────────────────────────
+  { id: "starwars",     label: "星球大战",    glyph: "✦",  color: "#4a4a7a", sub: "Star Wars",             category: "fiction", subcategory: "scifi" },
+  { id: "dune",         label: "沙丘",        glyph: "◉",  color: "#c8a84b", sub: "Dune",                  category: "fiction", subcategory: "scifi" },
+  { id: "matrix",       label: "黑客帝国",    glyph: "◈",  color: "#003300", sub: "The Matrix",            category: "fiction", subcategory: "scifi" },
+  { id: "foundation",   label: "基地",        glyph: "⊙",  color: "#2a4a6a", sub: "Foundation",            category: "fiction", subcategory: "scifi" },
+  { id: "rickmorty",    label: "瑞克与莫蒂",  glyph: "◎",  color: "#97ce4c", sub: "Rick and Morty",        category: "fiction", subcategory: "scifi" },
+  // ── 中文世界 ──────────────────────────────────────────────────────────────
+  { id: "xiyouji",      label: "西游记",      glyph: "☁",  color: "#c87941", sub: "Journey to the West",   category: "fiction", subcategory: "chinese" },
+  { id: "fengshen",     label: "封神演义",    glyph: "⊕",  color: "#8b3a3a", sub: "Investiture of Gods",   category: "fiction", subcategory: "chinese" },
+  { id: "threebody",    label: "三体",        glyph: "◎",  color: "#1a2a4a", sub: "Three-Body Problem",    category: "fiction", subcategory: "chinese" },
+  { id: "wuxia",        label: "金庸武侠",    glyph: "⋈",  color: "#2a5a2a", sub: "Wuxia / Jin Yong",      category: "fiction", subcategory: "chinese" },
+  { id: "hongloumeng",  label: "红楼梦",      glyph: "◇",  color: "#c87ba0", sub: "Dream of Red Chamber",  category: "fiction", subcategory: "chinese" },
+  // ── 游戏 ──────────────────────────────────────────────────────────────────
+  { id: "darksouls",    label: "黑暗之魂",    glyph: "◉",  color: "#3a2a1a", sub: "Dark Souls",            category: "fiction", subcategory: "games" },
+  { id: "zelda",        label: "塞尔达传说",  glyph: "◈",  color: "#c8a000", sub: "The Legend of Zelda",   category: "fiction", subcategory: "games" },
+  { id: "elden",        label: "艾尔登法环",  glyph: "⊗",  color: "#4a3a1a", sub: "Elden Ring",            category: "fiction", subcategory: "games" },
+  { id: "genshin",      label: "原神",        glyph: "✦",  color: "#4a9ab4", sub: "Genshin Impact",        category: "fiction", subcategory: "games" },
+];
+
+const FICTION_CATEGORIES = [
+  { key: "western-fantasy", label: "西方奇幻" },
+  { key: "superhero",       label: "超级英雄" },
+  { key: "anime",           label: "日本动漫" },
+  { key: "scifi",           label: "科幻" },
+  { key: "chinese",         label: "中文世界" },
+  { key: "games",           label: "游戏" },
 ];
 
 const SEED_DIMS = [
@@ -402,6 +445,7 @@ export default function NutshellUniverse() {
 
   const [phase, setPhase] = useState("select"); // select|gen_world|world|gen_soul|complete
   const [selectedTrad, setSelectedTrad] = useState(null);
+  const [activeTradTab, setActiveTradTab] = useState("myth"); // "myth" | "fiction"
   const [customWorld, setCustomWorld] = useState("");
   const [worldSeed, setWorldSeed] = useState(null);
   const [worldDimView, setWorldDimView] = useState(0);
@@ -596,10 +640,17 @@ export default function NutshellUniverse() {
         @keyframes pulse-out { 0%{transform:translate(-50%,-50%) scale(1);opacity:0.8} 100%{transform:translate(-50%,-50%) scale(3.5);opacity:0} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
         @keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:1} }
-        .fade-up { animation: fadeUp 0.5s ease forwards; opacity:0; }
+        @keyframes glowPulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+        @keyframes borderShimmer { 0%{opacity:0.3} 50%{opacity:1} 100%{opacity:0.3} }
+        @keyframes scanline { 0%{transform:translateY(-100%)} 100%{transform:translateY(100vh)} }
+        .fade-up { animation: fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards; opacity:0; }
         .dim-btn:hover { background: rgba(255,255,255,0.04) !important; }
-        .trad-btn:hover { opacity: 1 !important; }
+        .trad-btn { transition: all 0.25s ease !important; }
+        .trad-btn:hover { opacity: 1 !important; transform: translateY(-1px) !important; }
         .copy-btn:hover { opacity: 1 !important; }
+        .cta-btn { position: relative; overflow: hidden; }
+        .cta-btn::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.06) 50%,transparent 100%); transform:translateX(-100%); transition:transform 0.5s ease; }
+        .cta-btn:hover::after { transform:translateX(100%); }
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: #2a2518; border-radius: 2px; }
       `}</style>
@@ -609,31 +660,41 @@ export default function NutshellUniverse() {
         position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none",
       }} />
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 960, margin: "0 auto", padding: "0 20px 80px" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "0 auto", padding: "0 32px 80px" }}>
 
         {/* ── HEADER ── */}
-        <header style={{ textAlign: "center", padding: "44px 0 32px", borderBottom: "1px solid #1a1628" }}>
-          <div style={{ fontSize: 10, letterSpacing: 7, color: "#2e2820", textTransform: "uppercase", marginBottom: 8 }}>
-            灵犀涵化炉 · 宇宙观测仪
+        <header style={{ textAlign: "center", padding: "56px 0 36px", borderBottom: "1px solid #1a1628", position: "relative" }}>
+          {/* Radial glow behind title */}
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 500, height: 200,
+            background: `radial-gradient(ellipse, ${accentColor}0a 0%, transparent 70%)`,
+            pointerEvents: "none", transition: "background 0.8s",
+            animation: "glowPulse 4s ease-in-out infinite",
+          }} />
+          <div style={{ fontSize: 9, letterSpacing: 8, color: "#2a2235", textTransform: "uppercase", marginBottom: 14, position: "relative" }}>
+            灵犀涵化炉 &nbsp;·&nbsp; 宇宙观测仪
           </div>
           <h1 style={{
-            fontSize: 30, fontWeight: "normal", margin: "0 0 8px",
-            color: accentColor, letterSpacing: 3,
-            textShadow: `0 0 50px ${accentColor}44`,
+            fontSize: 34, fontWeight: "normal", margin: "0 0 10px",
+            color: accentColor, letterSpacing: 5,
+            textShadow: `0 0 60px ${accentColor}55, 0 0 120px ${accentColor}22`,
             transition: "color 0.6s, text-shadow 0.6s",
+            position: "relative",
           }}>
             果壳中的宇宙
           </h1>
-          <div style={{ fontSize: 12, color: "#3a3220", letterSpacing: 2 }}>
+          <div style={{ fontSize: 11, color: "#2e2640", letterSpacing: 4, position: "relative" }}>
             Universe in a Nutshell
           </div>
 
           {/* Phase indicator */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 0, marginTop: 24 }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, marginTop: 28, position: "relative" }}>
             {[
-              { id: "select", label: "选择宇宙" },
-              { id: "world",  label: "世界种子" },
-              { id: "complete", label: "果壳显现" },
+              { id: "select", label: "层⁶  选择宇宙" },
+              { id: "world",  label: "层⁵  溯源谱系" },
+              { id: "complete", label: "层¹⁻⁴  果壳显现" },
             ].map((p, i) => {
               const active = (p.id === "select" && (phase === "select" || phase === "gen_world")) ||
                              (p.id === "world" && (phase === "world" || phase === "input" || phase === "gen_soul")) ||
@@ -643,14 +704,21 @@ export default function NutshellUniverse() {
               return (
                 <div key={p.id} style={{ display: "flex", alignItems: "center" }}>
                   <div style={{
-                    padding: "5px 16px", fontSize: 11, letterSpacing: 1,
-                    color: active ? accentColor : done ? "#4a3f25" : "#1e1a20",
-                    borderBottom: `2px solid ${active ? accentColor : done ? "#3a3020" : "transparent"}`,
-                    transition: "all 0.4s",
+                    padding: "6px 20px 8px", fontSize: 10, letterSpacing: 2,
+                    color: active ? accentColor : done ? "#3a3428" : "#1e1c28",
+                    borderBottom: `1px solid ${active ? accentColor : done ? "#2a2820" : "transparent"}`,
+                    transition: "all 0.5s ease",
+                    textShadow: active ? `0 0 16px ${accentColor}66` : "none",
                   }}>
                     {p.label}
                   </div>
-                  {i < 2 && <div style={{ width: 20, height: 1, background: "#1a1628" }} />}
+                  {i < 2 && (
+                    <div style={{ width: 32, display: "flex", alignItems: "center", gap: 3 }}>
+                      <div style={{ flex: 1, height: 1, background: done ? "#2a2820" : "#141220" }} />
+                      <div style={{ width: 3, height: 3, borderRadius: "50%", background: done ? "#2a2820" : "#141220" }} />
+                      <div style={{ flex: 1, height: 1, background: "#141220" }} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -664,33 +732,117 @@ export default function NutshellUniverse() {
               选择宇宙的意识形态基底
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(132px, 1fr))", gap: 8, marginBottom: 28 }}>
-              {TRADITIONS.map(t => (
+            {/* Tab 切换 */}
+            <div style={{ display: "flex", gap: 0, marginBottom: "20px", borderBottom: "1px solid #1a1628" }}>
+              {[
+                { key: "myth",    label: "神话传统", count: 12 },
+                { key: "fiction", label: "架空世界", count: 28 },
+              ].map(tab => (
                 <button
-                  key={t.id}
-                  className="trad-btn"
-                  onClick={() => { setSelectedTrad(t.id === selectedTrad ? null : t.id); setCustomWorld(""); }}
-                  disabled={isGenerating}
+                  key={tab.key}
+                  onClick={() => setActiveTradTab(tab.key)}
                   style={{
-                    background: selectedTrad === t.id ? `${t.color}10` : "transparent",
-                    cursor: "pointer", fontFamily: "inherit",
-                    border: `1px solid ${selectedTrad === t.id ? t.color : "#1a1628"}`,
-                    borderRadius: 3, padding: "12px 8px", textAlign: "center",
-                    opacity: selectedTrad && selectedTrad !== t.id ? 0.4 : 1,
-                    transition: "all 0.2s",
+                    padding: "10px 28px 12px", fontSize: "12px", cursor: "pointer",
+                    border: "none", borderBottom: `2px solid ${activeTradTab === tab.key ? accentColor : "transparent"}`,
+                    background: "transparent",
+                    color: activeTradTab === tab.key ? accentColor : "rgba(255,255,255,0.3)",
+                    fontFamily: "inherit", letterSpacing: 2,
+                    transition: "all 0.25s ease",
+                    marginBottom: "-1px",
                   }}
                 >
-                  <div style={{ fontSize: 18, color: t.color, marginBottom: 5, opacity: selectedTrad === t.id ? 1 : 0.5 }}>{t.glyph}</div>
-                  <div style={{ fontSize: 12, color: selectedTrad === t.id ? t.color : "#5a5030" }}>{t.label}</div>
-                  <div style={{ fontSize: 9, color: "#2e2820", letterSpacing: 0.5, marginTop: 2 }}>{t.sub}</div>
+                  {tab.label}
+                  <span style={{
+                    marginLeft: 8, fontSize: 10,
+                    color: activeTradTab === tab.key ? `${accentColor}99` : "rgba(255,255,255,0.18)",
+                    letterSpacing: 0,
+                  }}>
+                    {tab.count}
+                  </span>
                 </button>
               ))}
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-              <div style={{ flex: 1, height: 1, background: "#1a1628" }} />
-              <span style={{ fontSize: 10, color: "#2e2820", letterSpacing: 3 }}>或输入任意传统</span>
-              <div style={{ flex: 1, height: 1, background: "#1a1628" }} />
+            {/* 神话传统 — 4列等宽网格 */}
+            {activeTradTab === "myth" && (
+              <div style={{
+                display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "8px", marginBottom: 32,
+              }}>
+                {TRADITIONS.filter(t => t.category === "myth").map(t => (
+                  <button
+                    key={t.id}
+                    className="trad-btn"
+                    onClick={() => { setSelectedTrad(t.id === selectedTrad ? null : t.id); setCustomWorld(""); }}
+                    disabled={isGenerating}
+                    style={{
+                      padding: "9px 0", borderRadius: "3px", textAlign: "center",
+                      border: `1px solid ${selectedTrad === t.id ? t.color : "rgba(255,255,255,0.1)"}`,
+                      background: selectedTrad === t.id ? `${t.color}18` : "rgba(255,255,255,0.02)",
+                      color: selectedTrad === t.id ? t.color : "rgba(255,255,255,0.5)",
+                      boxShadow: selectedTrad === t.id ? `0 0 16px ${t.color}33, inset 0 0 12px ${t.color}0a` : "none",
+                      fontSize: "12px", cursor: "pointer", fontFamily: "inherit",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {t.glyph} {t.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 架空世界 — 分类标题行 + 等宽网格 */}
+            {activeTradTab === "fiction" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: 32 }}>
+                {FICTION_CATEGORIES.map(cat => {
+                  const worlds = TRADITIONS.filter(t => t.subcategory === cat.key);
+                  return (
+                    <div key={cat.key}>
+                      {/* 分类标题 */}
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: 10, marginBottom: 8,
+                      }}>
+                        <div style={{ width: 2, height: 12, background: `${accentColor}55`, borderRadius: 1, flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, color: `${accentColor}77`, letterSpacing: 3 }}>{cat.label}</span>
+                        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.18)" }}>{worlds.length}</span>
+                        <div style={{ flex: 1, height: 1, background: "#14121e" }} />
+                      </div>
+                      {/* 等宽网格 */}
+                      <div style={{
+                        display: "grid", gridTemplateColumns: "repeat(5, 1fr)",
+                        gap: "7px",
+                      }}>
+                        {worlds.map(t => (
+                          <button
+                            key={t.id}
+                            className="trad-btn"
+                            onClick={() => { setSelectedTrad(t.id === selectedTrad ? null : t.id); setCustomWorld(""); }}
+                            disabled={isGenerating}
+                            style={{
+                              padding: "8px 0", borderRadius: "3px", textAlign: "center",
+                              border: `1px solid ${selectedTrad === t.id ? t.color : "rgba(255,255,255,0.1)"}`,
+                              background: selectedTrad === t.id ? `${t.color}18` : "rgba(255,255,255,0.02)",
+                              color: selectedTrad === t.id ? t.color : "rgba(255,255,255,0.5)",
+                              boxShadow: selectedTrad === t.id ? `0 0 14px ${t.color}33, inset 0 0 10px ${t.color}0a` : "none",
+                              fontSize: "12px", cursor: "pointer", fontFamily: "inherit",
+                              letterSpacing: "0.03em", whiteSpace: "nowrap", overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {t.glyph} {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, marginTop: 4 }}>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, transparent, #1a1628)" }} />
+              <span style={{ fontSize: 9, color: "#2e2430", letterSpacing: 4, textTransform: "uppercase" }}>或输入任意传统</span>
+              <div style={{ flex: 1, height: 1, background: "linear-gradient(to left, transparent, #1a1628)" }} />
             </div>
 
             <input
@@ -700,13 +852,20 @@ export default function NutshellUniverse() {
               disabled={isGenerating}
               style={{
                 width: "100%", boxSizing: "border-box",
-                background: "#0a0915", border: "1px solid #1a1628",
-                color: "#ddd0a8", padding: "13px 15px",
-                fontSize: 13, fontFamily: "inherit", borderRadius: 3, outline: "none",
-                transition: "border-color 0.2s",
+                background: "#07050f", border: "1px solid #1a1628",
+                color: "#ddd0a8", padding: "14px 18px",
+                fontSize: 13, fontFamily: "inherit", borderRadius: 2, outline: "none",
+                transition: "border-color 0.3s, box-shadow 0.3s",
+                letterSpacing: "0.03em",
               }}
-              onFocus={e => e.target.style.borderColor = "#3a3020"}
-              onBlur={e => e.target.style.borderColor = "#1a1628"}
+              onFocus={e => {
+                e.target.style.borderColor = `${accentColor}66`;
+                e.target.style.boxShadow = `0 0 20px ${accentColor}15, inset 0 0 20px ${accentColor}08`;
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = "#1a1628";
+                e.target.style.boxShadow = "none";
+              }}
             />
 
             {error && <div style={{ textAlign: "center", color: "#7a3535", fontSize: 12, marginTop: 14 }}>✕ {error}</div>}
@@ -738,22 +897,27 @@ export default function NutshellUniverse() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    background: "none", border: "1px solid #2a2228", color: "#3a3020",
-                    padding: "12px 20px", fontSize: 11, letterSpacing: 1,
-                    cursor: "pointer", borderRadius: 3, fontFamily: "inherit",
+                    background: "transparent", border: "1px solid #1e1c2a", color: "#3a3545",
+                    padding: "12px 22px", fontSize: 11, letterSpacing: 2,
+                    cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                    transition: "all 0.25s",
                   }}
-                >⊙ 读取种子</button>
+                  onMouseEnter={e => { e.target.style.borderColor = "#3a3550"; e.target.style.color = "#6a6080"; }}
+                  onMouseLeave={e => { e.target.style.borderColor = "#1e1c2a"; e.target.style.color = "#3a3545"; }}
+                >◎ 读取种子</button>
                 <button
+                  className="cta-btn"
                   onClick={generateWorld}
                   disabled={!selectedTrad && !customWorld.trim()}
                   style={{
-                    background: (selectedTrad || customWorld.trim()) ? `${accentColor}18` : "none",
-                    border: `1px solid ${(selectedTrad || customWorld.trim()) ? accentColor : "#1a1628"}`,
+                    background: (selectedTrad || customWorld.trim()) ? `${accentColor}12` : "transparent",
+                    border: `1px solid ${(selectedTrad || customWorld.trim()) ? `${accentColor}88` : "#1a1628"}`,
                     color: (selectedTrad || customWorld.trim()) ? accentColor : "#1e1a20",
-                    padding: "12px 44px", fontSize: 13, letterSpacing: 2,
+                    padding: "12px 52px", fontSize: 13, letterSpacing: 3,
                     cursor: (selectedTrad || customWorld.trim()) ? "pointer" : "default",
-                    borderRadius: 3, fontFamily: "inherit", transition: "all 0.3s",
-                    textShadow: (selectedTrad || customWorld.trim()) ? `0 0 20px ${accentColor}66` : "none",
+                    borderRadius: 2, fontFamily: "inherit", transition: "all 0.35s",
+                    textShadow: (selectedTrad || customWorld.trim()) ? `0 0 24px ${accentColor}88` : "none",
+                    boxShadow: (selectedTrad || customWorld.trim()) ? `0 0 32px ${accentColor}15` : "none",
                   }}
                 >
                   ◎ 观测世界种子
