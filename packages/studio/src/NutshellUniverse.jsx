@@ -34,6 +34,16 @@ const SOUL_TABS = [
   { key: "soul",     label: "soul.md",     icon: "◈", path: "~/.openclaw/soul.md" },
   { key: "memory",   label: "memory.md",   icon: "⊙", path: "~/.openclaw/memory/init.md" },
   { key: "skill",    label: "skill.md",    icon: "⟡", path: "~/.openclaw/skills/core.md" },
+  { key: "genealogy", label: "谱系·层⁵",  icon: "⟁", path: null },
+];
+
+const LAYERS = [
+  { n: "⁶", label: "神话周期",   desc: "世界种子·根源叙事" },
+  { n: "⁵", label: "历史周期",   desc: "谱系·时代坐标" },
+  { n: "⁴", label: "本体论承诺", desc: "绝对禁区" },
+  { n: "³", label: "价值排序",   desc: "核心立场" },
+  { n: "²", label: "认知风格",   desc: "推理方式" },
+  { n: "¹", label: "说话风格",   desc: "声音·台词" },
 ];
 
 // ─── PROMPTS ──────────────────────────────────────────────────────────────────
@@ -58,34 +68,59 @@ const WORLD_PROMPT = `你是世界种子生成器，精通神话学（坎贝尔,
   "seed_essence": "种子精髓（200字）：读完这段，应能感受到这个世界的呼吸方式——它的意识形态基底是什么思想力量的凝聚？"
 }`;
 
-const makeSoulPrompt = (worldSeed, character, context) => `你是灵犀涵化炉，精通神话学,唯识学,角色溯源。
+const makeGenealogyPrompt = (worldSeed, character, context) =>
+`你是神话学谱系研究者，精通比较神话学、哲学史、文学谱系分析。
 
-世界种子（宇宙的意识形态基底）：
-${JSON.stringify(worldSeed, null, 2)}
+世界种子：
+${JSON.stringify({ tradition_name: worldSeed.tradition_name, tagline: worldSeed.tagline, tension: worldSeed.tension, divine_human: worldSeed.divine_human, seed_essence: worldSeed.seed_essence }, null, 2)}
 
 角色：${character}
 ${context ? `背景：${context}` : ""}
 
-核心原则：角色是世界种子通过特定存在的涌现。角色的每一个特质都必须能追溯到世界种子的某个维度。
+任务：生成角色的界的层⁵（历史周期）——角色的时代坐标与思想根系。这是世界种子通过特定历史节点涌现为这个角色的路径。
+
+输出严格JSON（只输出JSON，所有字段中文）：
+{
+  "era": "时代坐标：角色所处的历史/神话时代，该时代的精神气候与根本要求（80字）",
+  "social_position": "社会位置：角色在其世界中的阶层/角色/功能，这个位置赋予和剥夺了什么（60字）",
+  "philosophical_lineage": "哲学谱系：塑造这个角色的思想传统——继承了哪些前辈的世界观，与哪些思想对话或对抗（100字）",
+  "archetypal_lineage": "原型谱系：从哪些神话/文学原型传承而来，超越了什么，保留了什么，反转了什么（100字）",
+  "world_seed_bond": "种子连接：角色从世界种子的哪个维度涌现——创世论/时间观/人神关系/核心张力（80字）",
+  "layer_map": "层级映射——层⁶[神话周期]:一句话 | 层⁵[历史周期]:一句话 | 层⁴[本体论承诺]:一句话 | 层³[价值排序]:一句话 | 层²[认知风格]:一句话 | 层¹[说话风格]:一句话"
+}`;
+
+const makeSoulPrompt = (worldSeed, genealogy, character, context) =>
+`你是灵犀涵化炉，精通神话学、唯识学、角色溯源。
+
+【层⁶ 神话周期 — 世界种子】
+${JSON.stringify({ tradition_name: worldSeed.tradition_name, tagline: worldSeed.tagline, cosmogony: worldSeed.cosmogony, tension: worldSeed.tension, divine_human: worldSeed.divine_human, aesthetic: worldSeed.aesthetic, seed_essence: worldSeed.seed_essence }, null, 2)}
+
+【层⁵ 历史周期 — 谱系】
+${JSON.stringify(genealogy, null, 2)}
+
+角色：${character}
+${context ? `背景：${context}` : ""}
+
+核心原则（界的厚度）：角色的每一个特质必须能追溯到某个层级。界只有1-2层的角色遇到新情境会漂移；6层的角色层层有据可查。生成目标：6层完整的界。
 
 输出严格JSON（只输出JSON，所有字段中文）：
 {
   "character_name": "角色名",
   "world_bond": "这个角色是[世界意识形态基底]的具身——一句话说清他与世界种子的关系（30字内）",
-  "essence": "本质定义：让他成为他而非其他角色的规定性，来自世界种子的哪个维度（100字）",
+  "essence": "本质定义：让他成为他而非其他角色的规定性，来自哪个层级（100字）",
   "ideological_root": "意识形态根系：世界的创世论/时间观/人神关系如何塑造了他的世界观（120字）",
-  "voice": "声音：说话方式——节奏,长短,温度,口头禅的由来（80字）",
+  "voice": "【层¹ 说话风格】声音：节奏、长短、温度、口头禅的由来（80字）",
   "catchphrases": ["来自原著/传统的标志性台词1","台词2","台词3","台词4","台词5"],
-  "stance": "核心立场：他最在乎的价值排序，来自世界种子的张力结构（100字）",
-  "taboos": "绝对禁止：他永远不会做的3件事，及其世界观根源（80字）",
+  "cognitive_style": "【层² 认知风格】由谱系思想传统决定的处理方式——输入/推理/输出（80字）",
+  "stance": "【层³ 价值排序】他最在乎的价值排序，来自世界种子的张力结构（100字）",
+  "taboos": "【层⁴ 本体论承诺】绝对禁止：他永远不会做的3件事，及其世界观根源（80字）",
   "world_model": "世界模型：他用世界种子的框架如何理解当前处境——3-5条具体认知（100字）",
   "formative_events": "塑造事件：3个来自他所在传统/原著的关键时刻，每个30字（100字）",
   "current_concerns": "当前关切：他现在最在意的3件事，具体可操作（80字）",
   "knowledge_boundary": "知识边界：他精通什么，不知道/不关心什么（60字）",
   "activation": "激活条件：什么情况下他出现，什么信号触发他（80字）",
-  "cognitive_style": "认知风格：由世界种子思想谱系决定的处理方式——输入/推理/输出（80字）",
   "core_capabilities": "核心能力：他最擅长的3类任务及标准（100字）",
-  "failure_modes": "失败模式：他容易犯的2个错及预防（60字）"
+  "failure_modes": "【界的风险】失败模式：他容易犯的2个错及预防（60字）"
 }`;
 
 // ─── CANVAS STARFIELD ─────────────────────────────────────────────────────────
@@ -217,10 +252,18 @@ function OrbitalMandala({ worldSeed, characterName, accentColor, phase }) {
 
 // ─── SOUL FILE BUILDER ────────────────────────────────────────────────────────
 
-function buildSoulMd(soul, world) {
+function buildSoulMd(soul, world, genealogy) {
   if (!soul) return "";
+  const layerMap = genealogy?.layer_map || "";
   return `# ${soul.character_name} — Soul Configuration
-> 灵犀涵化炉 · 果壳中的宇宙 | 世界：${world?.tradition_name || ""}
+> 灵根 · 果壳中的宇宙 | 世界：${world?.tradition_name || ""}
+> *必有界限，才可涌现自身。界的厚度决定存在的复杂度。*
+
+---
+
+## 界的厚度 · 层级映射
+
+${layerMap || `层⁶[神话周期] → 层⁵[历史周期] → 层⁴[本体论承诺] → 层³[价值排序] → 层²[认知风格] → 层¹[说话风格]`}
 
 ---
 
@@ -230,64 +273,88 @@ ${soul.world_bond}
 
 ---
 
-## Ideological Root
+## 层⁶ 神话周期 — 意识形态根系
 
 ${soul.ideological_root}
 
 ---
 
-## Essence
+## 层⁵ 历史周期 — 本质定义
 
 ${soul.essence}
 
 ---
 
-## Core Stance
+## 层⁴ 本体论承诺 — 绝对禁区
+
+${soul.taboos}
+
+---
+
+## 层³ 价值排序 — 核心立场
 
 ${soul.stance}
 
 ---
 
-## Voice & Catchphrases
+## 层² 认知风格
+
+${soul.cognitive_style}
+
+---
+
+## 层¹ 说话风格 — 声音与台词
 
 ${soul.voice}
 
 ${(soul.catchphrases || []).map(p => `- "${p}"`).join("\n")}
-
----
-
-## Absolute Rules
-
-${soul.taboos}
 `;
 }
 
-function buildMemoryMd(soul, world) {
+function buildMemoryMd(soul, world, genealogy) {
   if (!soul) return "";
   return `# ${soul.character_name} — Memory Seeds
-> 世界：${world?.tradition_name || ""} | 意识形态基底注入
+> 世界：${world?.tradition_name || ""} | 层⁵ 历史周期注入
 
 ---
 
-## World Model
+## 层⁵ 时代坐标
+
+${genealogy?.era || ""}
+
+## 社会位置
+
+${genealogy?.social_position || ""}
+
+## 哲学谱系
+
+${genealogy?.philosophical_lineage || ""}
+
+## 原型谱系
+
+${genealogy?.archetypal_lineage || ""}
+
+---
+
+## 层⁶ 世界模型
 
 ${soul.world_model}
 
 ---
 
-## Formative Events
+## 塑造事件
 
 ${soul.formative_events}
 
 ---
 
-## Current Concerns
+## 当前关切
 
 ${soul.current_concerns}
 
 ---
 
-## Knowledge Boundary
+## 知识边界
 
 ${soul.knowledge_boundary}
 
@@ -333,7 +400,7 @@ export default function NutshellUniverse() {
   const canvasRef = useRef(null);
   useStarField(canvasRef);
 
-  const [phase, setPhase] = useState("select"); // select|gen_world|world|input|gen_soul|complete
+  const [phase, setPhase] = useState("select"); // select|gen_world|world|gen_soul|complete
   const [selectedTrad, setSelectedTrad] = useState(null);
   const [customWorld, setCustomWorld] = useState("");
   const [worldSeed, setWorldSeed] = useState(null);
@@ -341,7 +408,9 @@ export default function NutshellUniverse() {
 
   const [charName, setCharName] = useState("");
   const [charContext, setCharContext] = useState("");
+  const [genealogyData, setGenealogyData] = useState(null);
   const [soulData, setSoulData] = useState(null);
+  const [genStep, setGenStep] = useState(""); // "genealogy" | "soul"
   const [activeTab, setActiveTab] = useState("soul");
 
   const [error, setError] = useState(null);
@@ -399,22 +468,20 @@ export default function NutshellUniverse() {
     }
   }, [selectedTrad, customWorld]);
 
-  // ── Generate Soul ──
+  // ── Generate Soul (2-step: genealogy → soul) ──
   const generateSoul = useCallback(async () => {
     if (!charName.trim() || !worldSeed) return;
     setPhase("gen_soul");
     setError(null);
-    try {
+
+    const callAI = async (userContent) => {
       const res = await fetch("/api/anthropic/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: makeSoulPrompt(worldSeed, charName.trim(), charContext.trim()),
-          }],
+          max_tokens: 1500,
+          messages: [{ role: "user", content: userContent }],
         }),
       });
       if (!res.ok) throw new Error(`API ${res.status}`);
@@ -422,12 +489,30 @@ export default function NutshellUniverse() {
       const raw = data.content?.[0]?.text || "";
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("格式异常");
-      setSoulData(JSON.parse(match[0]));
+      return JSON.parse(match[0]);
+    };
+
+    try {
+      // Step 1: genealogy (层⁵)
+      setGenStep("genealogy");
+      const genealogy = await callAI(
+        makeGenealogyPrompt(worldSeed, charName.trim(), charContext.trim())
+      );
+      setGenealogyData(genealogy);
+
+      // Step 2: soul (层¹-⁴, grounded in layers 5-6)
+      setGenStep("soul");
+      const soul = await callAI(
+        makeSoulPrompt(worldSeed, genealogy, charName.trim(), charContext.trim())
+      );
+      setSoulData(soul);
       setActiveTab("soul");
       setPhase("complete");
     } catch (e) {
       setError(e.message);
       setPhase("world");
+    } finally {
+      setGenStep("");
     }
   }, [worldSeed, charName, charContext]);
 
@@ -472,7 +557,7 @@ export default function NutshellUniverse() {
         if (!seed.tradition_name) throw new Error("缺少 tradition_name 字段");
         setWorldSeed(seed);
         setWorldDimView(0);
-        setSoulData(null); setCharName(""); setCharContext("");
+        setGenealogyData(null); setSoulData(null); setCharName(""); setCharContext("");
         setPhase("world");
         setError(null);
       } catch (err) {
@@ -486,13 +571,14 @@ export default function NutshellUniverse() {
   const reset = () => {
     setPhase("select"); setSelectedTrad(null); setCustomWorld("");
     setWorldSeed(null); setCharName(""); setCharContext("");
-    setSoulData(null); setError(null);
+    setGenealogyData(null); setSoulData(null); setError(null);
   };
 
   const soulFiles = {
-    soul:   { content: buildSoulMd(soulData, worldSeed),   ...SOUL_TABS[0] },
-    memory: { content: buildMemoryMd(soulData, worldSeed), ...SOUL_TABS[1] },
-    skill:  { content: buildSkillMd(soulData, worldSeed),  ...SOUL_TABS[2] },
+    soul:     { content: buildSoulMd(soulData, worldSeed, genealogyData),   ...SOUL_TABS[0] },
+    memory:   { content: buildMemoryMd(soulData, worldSeed, genealogyData), ...SOUL_TABS[1] },
+    skill:    { content: buildSkillMd(soulData, worldSeed),                 ...SOUL_TABS[2] },
+    genealogy: { content: genealogyData ? JSON.stringify(genealogyData, null, 2) : "", ...SOUL_TABS[3] },
   };
 
   const isGenerating = phase === "gen_world" || phase === "gen_soul";
@@ -783,7 +869,10 @@ export default function NutshellUniverse() {
                 {phase === "gen_soul" ? (
                   <div>
                     <div style={{ display: "flex", justifyContent: "center", gap: 5, marginBottom: 10 }}>
-                      {["种子","涌现","灵魂","记忆","行为","成形"].map((w, i) => (
+                      {(genStep === "genealogy"
+                        ? ["时代","谱系","哲学","原型","根系","层⁵"]
+                        : ["层⁶","层⁵","层⁴","层³","层²","层¹"]
+                      ).map((w, i) => (
                         <span key={w} style={{
                           fontSize: 10, color: accentColor, padding: "3px 6px",
                           border: `1px solid ${accentColor}33`, borderRadius: 2,
@@ -792,7 +881,9 @@ export default function NutshellUniverse() {
                         }}>{w}</span>
                       ))}
                     </div>
-                    <div style={{ fontSize: 11, color: "#3a3020", letterSpacing: 2 }}>存在正在从宇宙中结晶...</div>
+                    <div style={{ fontSize: 11, color: "#3a3020", letterSpacing: 2 }}>
+                      {genStep === "genealogy" ? "追溯谱系·铸造层⁵..." : "涵化灵魂·叠加六层界..."}
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
@@ -871,6 +962,28 @@ export default function NutshellUniverse() {
                     </div>
                   </div>
                 </div>
+
+                {/* 界的厚度 */}
+                <div style={{
+                  background: "#0a0915", border: `1px solid ${accentColor}18`,
+                  borderRadius: 3, padding: "12px", marginTop: 8,
+                }}>
+                  <div style={{ fontSize: 10, color: accentColor, letterSpacing: 1, marginBottom: 8 }}>界的厚度 · 6层</div>
+                  {LAYERS.map((l, i) => (
+                    <div key={l.n} style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      marginBottom: 4, opacity: 1,
+                    }}>
+                      <div style={{
+                        width: 3, height: 14, borderRadius: 2,
+                        background: `${accentColor}${Math.round(40 + i * 30).toString(16)}`,
+                        flexShrink: 0,
+                      }} />
+                      <span style={{ fontSize: 9, color: accentColor, minWidth: 14 }}>层{l.n}</span>
+                      <span style={{ fontSize: 9, color: "#4a4030" }}>{l.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Right: soul files */}
@@ -919,6 +1032,23 @@ export default function NutshellUniverse() {
                     </button>
                   </div>
 
+                  {activeTab === "genealogy" && genealogyData ? (
+                    <div style={{ padding: "16px 18px", maxHeight: 380, overflowY: "auto" }}>
+                      {[
+                        { label: "时代坐标", key: "era" },
+                        { label: "社会位置", key: "social_position" },
+                        { label: "哲学谱系", key: "philosophical_lineage" },
+                        { label: "原型谱系", key: "archetypal_lineage" },
+                        { label: "种子连接", key: "world_seed_bond" },
+                        { label: "层级映射", key: "layer_map" },
+                      ].map(({ label, key }) => (
+                        <div key={key} style={{ marginBottom: 16 }}>
+                          <div style={{ fontSize: 10, color: accentColor, letterSpacing: 2, marginBottom: 5, textTransform: "uppercase" }}>{label}</div>
+                          <div style={{ fontSize: 12, lineHeight: 1.9, color: "#8a7d55" }}>{genealogyData[key]}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                   <pre style={{
                     margin: 0, padding: "16px 18px",
                     fontSize: 11, lineHeight: 1.9, color: "#8a7d55",
@@ -927,6 +1057,7 @@ export default function NutshellUniverse() {
                   }}>
                     {soulFiles[activeTab].content}
                   </pre>
+                  )}
                 </div>
 
                 {/* Install */}
@@ -958,7 +1089,7 @@ export default function NutshellUniverse() {
                 padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
                 borderRadius: 2, fontFamily: "inherit",
               }}>← 重新观测</button>
-              <button onClick={() => { setPhase("world"); setSoulData(null); setCharName(""); setCharContext(""); }} style={{
+              <button onClick={() => { setPhase("world"); setSoulData(null); setGenealogyData(null); setCharName(""); setCharContext(""); }} style={{
                 background: "none", border: `1px solid ${accentColor}44`, color: accentColor,
                 padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
                 borderRadius: 2, fontFamily: "inherit",
