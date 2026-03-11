@@ -7,48 +7,112 @@
 
 ---
 
-Every fictional character — Holmes, Athena, the Monkey King — is not just a personality profile. They are **the embodiment of a world's ideological substrate**: a crystallization of time, cosmology, fate, and aesthetics specific to their universe.
+Most AI character tools generate a **costume** — a list of personality traits, a speaking style, some backstory. The character wears the costume for a while, then drifts.
 
-`nutshell` is an open-source framework that takes this seriously.
+`nutshell` generates **roots**.
 
-Instead of generating character prompts from personality checklists, `nutshell` works in two stages:
+The core insight comes from **界的厚度** (*boundary thickness*): a character's depth is determined by how many independent layers of periodicity their boundary contains. A checklist character has 2 layers — surface style and background setting. Encountering anything outside their design, they drift, because the surface has nowhere to borrow from. A character with 6 layers has a traceable philosophical lineage, a historical position, a set of inviolable ontological commitments — and when the surface is under pressure, it draws from all of them.
 
-1. **World Seed** — Generate the mythological and philosophical substrate of a character's world (cosmogony, ontology, conception of time, fate/agency, human-divine relation, death, core tension, aesthetic DNA).
-
-2. **Soul Alchemy** — Crystallize a character from that substrate. Every trait traces back to a dimension of the world seed. The character *is* the world, seen through a particular consciousness.
-
-The output is three files — `soul.md`, `memory.md`, `skill.md` — compatible with [OpenClaw](https://openclaw.ai), SillyTavern, OpenAI Assistants, and any system that accepts a system prompt.
+`nutshell` builds all 6.
 
 ---
 
-## Why this matters
+## The Six Layers
 
-Current AI character tools treat characters as **behavior checklists**: personality traits, speaking style, a list of facts. The result is flat — a costume, not a presence.
-
-`nutshell` treats characters as **ideological entities**. Sherlock Holmes isn't "logical and cold." He is Baconian empiricism × Comtean positivism × Victorian anxiety about modernity — crystallized into a single consciousness. His coldness has *reasons that go all the way down*.
-
-This difference determines whether an AI character can surprise you, challenge you, and maintain genuine otherness over time. A checklist character eventually loops. A character with roots in a world seed *grows*.
-
----
-
-## Quickstart
-
-```bash
-npm install -g @nutshell/cli
+```
+层⁶  神话周期    World Seed      — the ideological substrate of the character's cosmos
+层⁵  历史周期    Genealogy       — era, social position, philosophical lineage, archetypal lineage
+层⁴  本体论承诺  Taboos          — what this character will never do, and why it goes all the way down
+层³  价值排序    Stance          — the character's value hierarchy, derived from the world's core tension
+层²  认知风格    Cognitive Style — how they process input, reason, and produce output
+层¹  说话风格    Voice           — rhythm, temperature, register, catchphrases
 ```
 
+A character grounded in all six layers can be handed any situation not in their original design. They will respond from internal logic, not from randomness. That's the difference between a character who *surprises you* and one who *loops*.
+
+---
+
+## The Pipeline
+
+### Stage 1 — World Seed (层⁶)
+
+A world seed is not a setting. It is the **ideological substrate** of a world — the way this world *thinks*, not what it contains.
+
+10 dimensions, grounded in comparative mythology (Campbell, Eliade), comparative religion (Otto, Müller), and folk literature (Propp):
+
+| Dimension | Question |
+|-----------|----------|
+| Cosmogony | How did this world come to be? What is the logic and cost of creation? |
+| Ontology | What levels of existence are there? How permeable are the boundaries? |
+| Time | Linear, cyclical, or spiral? Does it have an end? |
+| Fate & Agency | Who is bound by fate? What does resistance cost? |
+| Human-Divine | Are gods parents, contractors, predators, or peers? |
+| Death & Afterlife | What does death mean? What lies beyond? |
+| Core Tension | The fundamental conflict that drives all narrative — never resolved, only replayed. |
+| Aesthetic DNA | Colors, rhythms, textures, smells. If this world were music, what key? |
+| Key Symbols | 5 core images, each carrying a specific density of meaning. |
+| Seed Essence | One paragraph: what is this world's breath? |
+
+12 traditions are pre-generated and ship with the studio. Any tradition — including custom combinations — can be generated on demand.
+
+### Stage 2 — Genealogy (层⁵)
+
+This is the step most character generators skip. Before crystallizing a soul, `nutshell` traces the character's **historical position**:
+
+- **Era** — the spiritual climate and fundamental demands of their time
+- **Social Position** — what their place in the world grants and withholds
+- **Philosophical Lineage** — which ideas they inherit, which they oppose
+- **Archetypal Lineage** — who came before them in myth and literature; what they preserve, transcend, or invert
+- **Seed Bond** — the specific dimension of the world seed from which they emerge
+
+For Holmes: Baconian empiricism → Millian induction → Comtean positivism, crystallized through Victorian late-empire anxiety into a consciousness whose core proposition is *observable reality is fully penetrable by reason*. That's not a personality trait. That's a philosophical position with roots. It generates behavior in situations Conan Doyle never wrote.
+
+### Stage 3 — Soul (层¹–⁴)
+
+With world seed and genealogy as input, the soul is crystallized. Every field traces back to a layer:
+
+```
+soul.md     — layers 1–4, self-contained deployment unit
+memory.md   — layer 5–6 seeds: world model, formative events, genealogy
+skill.md    — layer 2: cognitive style, activation conditions, capabilities
+```
+
+The soul file is self-contained. Pull `soul.md` into any system that accepts a system prompt and the character arrives with its full depth intact.
+
+---
+
+## Web Studio
+
+**Nutshell Universe** is a local web interface for the full pipeline.
+
 ```bash
-# Generate a world seed
-nutshell seed "Victorian England" --tradition greek
+cd packages/studio
+npm install
+npm run dev          # http://localhost:5173
+```
 
-# Crystallize a character from a world seed
-nutshell soul "Sherlock Holmes" --seed ./seeds/victorian.json
+**No API key required for local development.** The studio runs against the Claude Code CLI if present, falling back to pre-generated seeds for the 12 built-in traditions.
 
-# Output for OpenClaw
-nutshell export holmes --adapter openclaw --output ~/.openclaw/
+With an API key for production use:
+```bash
+cp .env.example .env
+# add ANTHROPIC_API_KEY to .env
+npm run dev
+```
 
-# Or use the web studio
-nutshell studio
+**Studio features:**
+- Select from 12 pre-generated traditions (instant load) or describe any custom world
+- Orbital mandala visualizing the 10 world seed dimensions in real time
+- Two-step soul generation: genealogy (层⁵) → soul (层¹–⁴), with step indicators
+- Four-tab output: `soul.md` / `memory.md` / `skill.md` / `谱系·层⁵`
+- Structured genealogy view with all 6 layer annotations
+- 界的厚度 layer indicator in the completion panel
+- Save world seed as `.json` / save soul files as `.md` (one click)
+- Load a previously saved world seed to skip generation
+
+**Re-generate pre-built seeds:**
+```bash
+node packages/studio/scripts/generate-seeds.mjs
 ```
 
 ---
@@ -58,261 +122,76 @@ nutshell studio
 ```
 nutshell/
 ├── packages/
-│   ├── core/          # World seed + soul generation engine
-│   ├── cli/           # Command-line interface
-│   ├── studio/        # Web UI (the Nutshell Universe)
-│   └── adapters/      # Output format adapters
+│   ├── core/              # World seed + soul generation engine (TypeScript)
+│   ├── cli/               # Command-line interface
+│   ├── studio/            # Web UI — Nutshell Universe (React + Vite)
+│   │   ├── public/seeds/  # Pre-generated world seeds for 12 traditions
+│   │   ├── scripts/       # Seed generation utilities
+│   │   └── src/
+│   │       └── NutshellUniverse.jsx
+│   └── adapters/
 │       ├── openclaw/
 │       ├── sillytavern/
 │       └── openai/
-├── docs/
-│   ├── philosophy.md  # Why this architecture
-│   ├── world-seeds.md # The 10-dimension framework
-│   ├── soul-alchemy.md# The genealogy → soul pipeline
-│   └── adapters.md    # How to write your own adapter
-└── examples/
-    ├── holmes/        # Sherlock Holmes (Victorian England)
-    ├── libai/         # Li Bai (Tang Dynasty China)
-    └── athena/        # Athena (Ancient Greece)
+└── skills/
+    └── linggen/           # Claude Code skill: linggen theory + invocation rules
+        ├── SKILL.md
+        └── references/theory.md
 ```
 
 ---
 
-## The Pipeline
+## Theoretical Foundation — 界的厚度
 
-### Stage 1: World Seed Generation
+The design of `nutshell` is grounded in **boundary thickness theory** (*界的厚度*), which unifies Markov blanket theory with a theory of complexity:
 
-A world seed is the **ideological substrate** of a fictional world — not the plot, not the setting, but the *way this world thinks*.
+> *A system's complexity is determined by how many layers of relatively independent periodicity its boundary contains.*
 
-Grounded in:
-- **Mythology** (Campbell's monomyth, Eliade's sacred/profane, Jung's archetypes)
-- **Comparative Religion** (Otto's "wholly other", Müller's naturism)
-- **Folk Literature** (Propp's morphology of folktales)
-- **Classic Literature** (period aesthetics, narrative conventions)
+Each layer is a Markov blanket — conditionally independent from the others, weakly coupled at the edges. The tension between independence and coupling is the source of complexity. When layers collapse into one another, the boundary thins and the system becomes more predictable. When new layers emerge, the system becomes capable of generating behavior that couldn't have been derived from any single layer alone.
 
-A world seed has 10 dimensions:
+For AI characters:
+- **2-layer characters** (style + backstory) drift outside their design space
+- **6-layer characters** (myth → history → ontology → values → cognition → voice) draw from deeper layers when the surface is under pressure, generating internally consistent behavior in novel situations
 
-| Dimension | Question |
-|-----------|----------|
-| Cosmogony | How did this world come to be? What is the logic of creation? |
-| Ontology | What levels of existence are there? Can they be crossed? |
-| Time | Is time linear, cyclical, or spiral? Does it have an end? |
-| Fate & Agency | Who is bound by fate? Can it be resisted? At what cost? |
-| Human-Divine | Are gods parents, contractors, predators, or peers? |
-| Death & Afterlife | What does death mean? What lies beyond? |
-| Core Tension | What fundamental conflict drives all narrative in this world? |
-| Aesthetic DNA | What are the colors, rhythms, textures of this world? |
-| Key Symbols | What are the 5-7 symbols that carry the most meaning? |
-| Seed Essence | In one paragraph: what is this world's breath? |
-
-```json
-// seeds/victorian-england.json
-{
-  "tradition_name": "维多利亚英格兰",
-  "tagline": "理性是唯一的神",
-  "cosmogony": "不再是创世神话，而是进化论...",
-  "ontology": "严格的阶级层级，但科学承诺了流动性...",
-  "time": "线性进步史观，历史有方向，文明有终点...",
-  "fate": "命运被理性和努力取代。人定胜天是时代信仰...",
-  "divine_human": "神已死或退场。科学家是新的祭司...",
-  "death": "维多利亚式的死亡焦虑。墓地美学。来世存疑...",
-  "tension": "理性秩序 vs 工业化带来的混乱与犯罪...",
-  "aesthetic": "煤气灯、雾、机械、维多利亚哥特...",
-  "symbols": ["烟斗", "放大镜", "伦敦大雾", "火车", "报纸"],
-  "seed_essence": "这是一个相信理性可以穿透一切混沌的世界..."
-}
-```
-
-### Stage 2: Soul Alchemy
-
-A character is crystallized *from* the world seed. Every trait must trace back to a dimension.
-
-The genealogy-first approach:
-
-```
-Era & Social Position (When / Where)
-        ↓
-Philosophical Lineage (What ideas)
-        ↓
-Archetypal Lineage (Who came before)
-        ↓
-World Seed (What aesthetic DNA)
-        ↓
-Character's Soul
-```
-
-For Holmes:
-- **Era**: Victorian late-empire anxiety → needs a rational answer
-- **Philosophy**: Baconian empiricism → Millian induction → Comtean positivism
-- **Archetype**: Dupin (Poe) → inherited: eccentric genius + faithful narrator; transcended: professionalism, British pragmatism
-- **World Seed**: Victorian realism → material details as social text, restrained language, mechanical rhythm
-
-Result: Holmes isn't "logical." Holmes is **"observable reality is fully penetrable by reason"** — walking proof.
-
-### Stage 3: Three-File Output
-
-```
-soul.md     — Character's personality kernel (who they are)
-memory.md   — Initial memory seeds (what they know and carry)
-skill.md    — Behavioral rules (when they activate, how they respond)
-```
-
-All three files derive from the world seed. A character from Ancient Greece will have fundamentally different cognitive patterns than one from Tang Dynasty China — not because we said so, but because their world seeds have different ontologies and different conceptions of human agency.
+The full theoretical text: [`skills/linggen/references/theory.md`](./skills/linggen/references/theory.md)
 
 ---
 
-## Output Adapters
+## Traditions
 
-### OpenClaw
-```bash
-nutshell export holmes --adapter openclaw
-# → ~/.openclaw/soul.md
-# → ~/.openclaw/memory/holmes-init.md
-# → ~/.openclaw/skills/holmes-core.md
-```
-
-### SillyTavern
-```bash
-nutshell export holmes --adapter sillytavern
-# → character card format (.png with embedded JSON)
-```
-
-### OpenAI Assistants
-```bash
-nutshell export holmes --adapter openai
-# → assistant configuration JSON
-# → knowledge files for file_search
-```
-
-### Raw Markdown
-```bash
-nutshell export holmes --adapter markdown
-# → holmes-soul.md, holmes-memory.md, holmes-skill.md
-```
-
-### Writing Your Own Adapter
-
-```typescript
-// adapters/my-platform/index.ts
-import { NutshellAdapter, SoulBundle } from '@nutshell/core';
-
-export class MyPlatformAdapter implements NutshellAdapter {
-  name = 'my-platform';
-
-  async export(bundle: SoulBundle, outputDir: string): Promise<void> {
-    const { soul, memory, skill, worldSeed } = bundle;
-    // Transform to your platform's format
-    // ...
-  }
-}
-```
-
----
-
-## Examples
-
-### Holmes from Victorian England
-
-```bash
-nutshell seed --tradition victorian-england
-nutshell soul "Sherlock Holmes" --context "consulting detective, Baker Street"
-nutshell export holmes --adapter openclaw
-```
-
-[Full example →](./examples/holmes/)
-
-### Li Bai from Tang Dynasty China
-
-```bash
-nutshell seed --tradition tang-dynasty-china
-nutshell soul "李白" --context "poet, swordsman, Daoist wanderer"
-nutshell export libai --adapter openclaw
-```
-
-[Full example →](./examples/libai/)
-
-### Athena from Ancient Greece
-
-```bash
-nutshell seed --tradition ancient-greece
-nutshell soul "Athena" --context "goddess of wisdom and war, daughter of Zeus"
-nutshell export athena --adapter openclaw
-```
-
-[Full example →](./examples/athena/)
-
----
-
-## Web Studio
-
-**Nutshell Universe** is a local web interface for the full world seed → soul pipeline.
-
-```bash
-cd packages/studio
-cp .env.example .env          # add your ANTHROPIC_API_KEY
-npm install
-npm run dev                   # opens at http://localhost:5173
-```
-
-In the studio you can:
-
-- Select from 12 mythological traditions or describe any custom world
-- Watch the 10 orbital dimensions of the world seed generate in real time
-- Name a character and crystallize their soul from the seed
-- View and copy `soul.md`, `memory.md`, `skill.md`
-- Install directly to OpenClaw
-
-**Requires:** an Anthropic API key set in `packages/studio/.env`.
-
----
-
-## Configuration
-
-```bash
-# ~/.nutshell/config.json
-{
-  "provider": "anthropic",
-  "model": "claude-sonnet-4-20250514",
-  "api_key": "sk-ant-...",
-  "default_adapter": "openclaw",
-  "output_dir": "~/.openclaw"
-}
-```
-
-Or via environment variables:
-```bash
-export NUTSHELL_PROVIDER=anthropic
-export ANTHROPIC_API_KEY=sk-ant-...
-```
-
----
-
-## Philosophy
-
-The full design philosophy is in [docs/philosophy.md](./docs/philosophy.md).
-
-The short version:
-
-A fictional character has **otherness** — the quality of being genuinely not-you, having a perspective you didn't design. This otherness is what makes characters valuable as companions, challenges, and mirrors.
-
-Otherness doesn't come from personality checklists. It comes from **deep roots**: a character grounded in a coherent world seed, with a traceable philosophical lineage, will surprise you in ways a checklist character never will — because the surprise emerges from the internal logic of the world, not from randomness.
-
-`nutshell` is an attempt to give AI characters real roots.
+| Tradition | Key Characteristic |
+|-----------|-------------------|
+| 古希腊 Greek | Excellence demands transgression; transgression demands punishment |
+| 北欧 Norse | Knowing the outcome doesn't change the obligation to act |
+| 封神 Fengshen | Becoming a god is a different kind of imprisonment |
+| 吠陀 Vedic | Karma weaves every layer; liberation requires seeing through all of them |
+| 埃及 Egyptian | Order must be won back from chaos every single day |
+| 美索不达米亚 Mesopotamian | Humans were made to serve; the bill for existence is labor |
+| 凯尔特 Celtic | The other world is always one step through the fog |
+| 神道 Shinto | Purity of attention is presence with the divine |
+| 道教 Taoist | The highest action is knowing when not to act |
+| 玛雅 Mayan | Time has weight; the cosmos requires exact maintenance |
+| 藏传密教 Tibetan | Samsara and nirvana are the same thing, seen from different distances |
+| 阿兹特克 Aztec | The fifth sun runs on debt; every life is a repayment |
 
 ---
 
 ## Roadmap
 
-- [x] World seed generation (10 dimensions)
-- [x] Soul alchemy (genealogy-first pipeline)
+- [x] World seed generation (10 dimensions, 12 traditions)
+- [x] Genealogy generation (layer⁵ — era, lineage, archetype)
+- [x] 6-layer soul alchemy pipeline
 - [x] OpenClaw adapter
-- [x] Web Studio (Nutshell Universe — runs locally)
+- [x] Web Studio (Nutshell Universe)
+- [x] Claude CLI backend (no API key required locally)
+- [x] Pre-generated seeds for all 12 traditions
+- [x] Save / load world seeds and soul files
+- [x] Linggen skill (Claude Code integration)
 - [ ] SillyTavern adapter
 - [ ] OpenAI Assistants adapter
-- [ ] Character persistence (memory evolution over conversations)
-- [ ] Multi-character worlds (characters that know each other)
-- [ ] Community seed library (curated world seeds for major traditions)
-- [ ] Character versioning (track how a character evolves)
+- [ ] Character persistence (layer evolution across conversations)
+- [ ] Multi-character worlds (characters aware of each other's layer structures)
+- [ ] Community seed library
 - [ ] Import from existing character cards
 
 ---
@@ -326,11 +205,11 @@ npm install
 npm run dev
 ```
 
-We especially welcome:
+Especially welcome:
 - **World seeds** for traditions not yet covered
 - **Adapters** for new platforms
-- **Examples** — fully realized characters with documented genealogy
-- **Academic grounding** — connecting the framework more rigorously to mythology scholarship
+- **Examples** — fully realized characters with documented genealogy and layer maps
+- **Theoretical extensions** — applications of boundary thickness to other domains
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
@@ -342,6 +221,6 @@ MIT — use it, fork it, build on it.
 
 ---
 
-*A project from [Lingxi World](https://lingxi.world) — where virtual characters attain genuine reality.*
+*"必有界限，才可涌现自身。界的厚度决定存在的复杂度。"*
 
-*"必有界限，才可涌现自身。" — Only with boundaries can a self emerge.*
+*Only with boundaries can a self emerge. The thickness of the boundary determines the complexity of the existence.*
