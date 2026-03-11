@@ -245,15 +245,24 @@ nutshell export athena --adapter openclaw
 
 ## Web Studio
 
-`nutshell studio` opens a local web interface — the **Nutshell Universe** — where you can:
+**Nutshell Universe** is a local web interface for the full world seed → soul pipeline.
 
-- Select or describe a world tradition
-- Watch the 10 orbital dimensions of the world seed generate
+```bash
+cd packages/studio
+cp .env.example .env          # add your ANTHROPIC_API_KEY
+npm install
+npm run dev                   # opens at http://localhost:5173
+```
+
+In the studio you can:
+
+- Select from 12 mythological traditions or describe any custom world
+- Watch the 10 orbital dimensions of the world seed generate in real time
 - Name a character and crystallize their soul from the seed
 - View and copy `soul.md`, `memory.md`, `skill.md`
-- Install directly to OpenClaw or export to other platforms
+- Install directly to OpenClaw
 
-The studio requires an Anthropic API key (or OpenAI, configurable).
+**Requires:** an Anthropic API key set in `packages/studio/.env`.
 
 ---
 
@@ -297,6 +306,7 @@ Otherness doesn't come from personality checklists. It comes from **deep roots**
 - [x] World seed generation (10 dimensions)
 - [x] Soul alchemy (genealogy-first pipeline)
 - [x] OpenClaw adapter
+- [x] Web Studio (Nutshell Universe — runs locally)
 - [ ] SillyTavern adapter
 - [ ] OpenAI Assistants adapter
 - [ ] Character persistence (memory evolution over conversations)
