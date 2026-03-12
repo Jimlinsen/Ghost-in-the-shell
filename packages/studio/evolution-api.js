@@ -112,9 +112,13 @@ export function evolutionApiPlugin(seedsDir) {
         const mock = isMock(cfg);
         const apiKey = cfg.api_key || process.env.ANTHROPIC_API_KEY;
 
-        const coreConfig = mock
-          ? { provider: "mock", model: "claude-cli", api_key: "mock" }
-          : { provider: cfg.provider ?? "anthropic", model: cfg.model ?? "claude-sonnet-4-20250514", api_key: apiKey };
+        // Always use a non-"mock" provider so Wikipedia research runs.
+        // When api_key is absent, @nutshell/core's callLLM falls back to mock anyway.
+        const coreConfig = {
+          provider: cfg.provider ?? "anthropic",
+          model: cfg.model ?? "claude-sonnet-4-20250514",
+          api_key: apiKey || undefined,
+        };
 
         try {
           const stages = [];
@@ -123,7 +127,7 @@ export function evolutionApiPlugin(seedsDir) {
             worldSeed: body.world_seed,
             context: body.context || "",
             language: cfg.language === "auto" ? "zh" : (cfg.language ?? "zh"),
-            skipResearch: mock, // skip Wikipedia in mock mode
+            // No skipResearch — Wikipedia is free and always relevant
           }, (stage) => {
             stages.push(stage);
             console.log("[soul]", stage);
