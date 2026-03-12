@@ -7,6 +7,7 @@ import * as path from "path";
 import * as os from "os";
 import { spawn } from "child_process";
 import { EvolutionEngine } from "@nutshell/evolution";
+import { generate } from "@nutshell/core";
 
 function callClaude(prompt) {
   return new Promise((resolve, reject) => {
@@ -94,6 +95,55 @@ export function evolutionApiPlugin(seedsDir) {
   return {
     name: "evolution-api",
     configureServer(server) {
+
+      // ── Soul generation: full pipeline via @nutshell/core ────────────────────
+      // POST /api/soul/generate  { character, tradition_key, world_seed, context, evo_events }
+      server.middlewares.use("/api/soul/generate", async (req, res) => {
+        if (req.method === "OPTIONS") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+          res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+          res.statusCode = 204; return res.end();
+        }
+        if (req.method !== "POST") { res.statusCode = 405; return res.end(); }
+
+        const body = await parseBody(req);
+        const cfg = readCfg();
+        const mock = isMock(cfg);
+        const apiKey = cfg.api_key || process.env.ANTHROPIC_API_KEY;
+
+        const coreConfig = mock
+          ? { provider: "mock", model: "claude-cli", api_key: "mock" }
+          : { provider: cfg.provider ?? "anthropic", model: cfg.model ?? "claude-sonnet-4-20250514", api_key: apiKey };
+
+        try {
+          const stages = [];
+          const bundle = await generate(coreConfig, {
+            character: body.character,
+            worldSeed: body.world_seed,
+            context: body.context || "",
+            language: cfg.language === "auto" ? "zh" : (cfg.language ?? "zh"),
+            skipResearch: mock, // skip Wikipedia in mock mode
+          }, (stage) => {
+            stages.push(stage);
+            console.log("[soul]", stage);
+          });
+
+          // Attach evo history to formative events if provided
+          if (body.evo_events?.length > 0 && bundle.soul) {
+            const EVT = { tension: "张力", character_action: "角色行动", transcendence: "超越", knowledge: "知识", research: "研究" };
+            const evoNote = body.evo_events.slice(0, 5)
+              .map(e => `[${EVT[e.event_type] ?? e.event_type}] ${(e.narrative || "").slice(0, 150)}`)
+              .join("\n");
+            bundle.soul.formative_events = (bundle.soul.formative_events || "") + "\n\n【世界演化事件】\n" + evoNote;
+          }
+
+          return json(res, bundle);
+        } catch (e) {
+          console.error("[soul/generate]", e.message);
+          return json(res, { error: e.message }, 500);
+        }
+      });
 
       // ── Unified LLM proxy for soul generation ────────────────────────────────
       // POST /api/llm/messages  →  proxies to Anthropic or Claude CLI

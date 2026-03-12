@@ -485,6 +485,7 @@ export default function NutshellUniverse() {
   const [evoGenResult, setEvoGenResult] = useState(null);
   const [evoPicker, setEvoPicker] = useState(false);
   const [evoSoulCtx, setEvoSoulCtx] = useState(null);    // { world, events } injected into soul gen
+  const [soulBundle, setSoulBundle] = useState(null); // { soul_md, memory_md, skill_md }
   const [evoSyncTarget, setEvoSyncTarget] = useState(null); // world id being synced
   const [evoSyncCharName, setEvoSyncCharName] = useState("");
   const [evoSyncMemory, setEvoSyncMemory] = useState("");
@@ -547,32 +548,15 @@ export default function NutshellUniverse() {
     }
   }, [selectedTrad, customWorld]);
 
-  // ── Generate Soul (2-step: genealogy → soul) ──
+  // ── Generate Soul — full pipeline via @nutshell/core ──
+  // Flow: Wikipedia research → genealogy (层⁵) → soul (层¹-⁶) → files
   const generateSoul = useCallback(async () => {
     if (!charName.trim() || !worldSeed) return;
     setPhase("gen_soul");
     setError(null);
 
-    const callAI = async (userContent) => {
-      const res = await fetch("/api/llm/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
-          messages: [{ role: "user", content: userContent }],
-        }),
-      });
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      const raw = data.content?.[0]?.text || "";
-      const match = raw.match(/\{[\s\S]*\}/);
-      if (!match) throw new Error("格式异常");
-      return JSON.parse(match[0]);
-    };
-
-    // ── Fetch evolution context for this tradition ──
-    let soulEvoCtx = null;
+    // Fetch evolution context for this tradition (optional, injects into formative_events)
+    let evoEvents = [];
     try {
       const tradKey = worldSeed.tradition_key || selectedTrad;
       const matched = evoWorlds.find(w =>
@@ -581,29 +565,35 @@ export default function NutshellUniverse() {
         w.seed?.tradition_name === worldSeed.tradition_name
       );
       if (matched && matched.pulse_count > 0) {
-        const events = await fetch(`/api/evolution/worlds/${encodeURIComponent(matched.id)}/history?limit=15`)
+        evoEvents = await fetch(`/api/evolution/worlds/${encodeURIComponent(matched.id)}/history?limit=15`)
           .then(r => r.ok ? r.json() : []).catch(() => []);
-        if (events.length > 0) {
-          soulEvoCtx = { world: matched, events };
-          setEvoSoulCtx(soulEvoCtx);
-        }
+        if (evoEvents.length > 0) setEvoSoulCtx({ world: matched, events: evoEvents });
       }
-    } catch { /* evolution context is optional */ }
+    } catch { /* optional */ }
 
     try {
-      // Step 1: genealogy (层⁵)
-      setGenStep("genealogy");
-      const genealogy = await callAI(
-        makeGenealogyPrompt(worldSeed, charName.trim(), charContext.trim(), soulEvoCtx?.events ?? null)
-      );
-      setGenealogyData(genealogy);
+      setGenStep("research"); // stage 0: Wikipedia
+      const res = await fetch("/api/soul/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          character: charName.trim(),
+          world_seed: worldSeed,
+          context: charContext.trim(),
+          evo_events: evoEvents,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API ${res.status}`);
+      }
+      const bundle = await res.json();
 
-      // Step 2: soul (层¹-⁴, grounded in layers 5-6)
-      setGenStep("soul");
-      const soul = await callAI(
-        makeSoulPrompt(worldSeed, genealogy, charName.trim(), charContext.trim(), soulEvoCtx?.events ?? null)
-      );
-      setSoulData(soul);
+      // bundle: { world_seed, genealogy, soul, files: { soul_md, memory_md, skill_md } }
+      setSoulData(bundle.soul);
+      setGenealogyData(bundle.genealogy ?? null);
+      // Store rendered file content for display
+      setSoulBundle(bundle.files ?? null);
       setActiveTab("soul");
       setPhase("complete");
     } catch (e) {
@@ -655,7 +645,7 @@ export default function NutshellUniverse() {
         if (!seed.tradition_name) throw new Error("缺少 tradition_name 字段");
         setWorldSeed(seed);
         setWorldDimView(0);
-        setGenealogyData(null); setSoulData(null); setCharName(""); setCharContext("");
+        setGenealogyData(null); setSoulData(null); setSoulBundle(null); setCharName(""); setCharContext("");
         setPhase("world");
         setError(null);
       } catch (err) {
@@ -669,7 +659,7 @@ export default function NutshellUniverse() {
   const reset = () => {
     setPhase("select"); setSelectedTrad(null); setCustomWorld("");
     setWorldSeed(null); setCharName(""); setCharContext("");
-    setGenealogyData(null); setSoulData(null); setError(null);
+    setGenealogyData(null); setSoulData(null); setSoulBundle(null); setError(null);
   };
 
   // ── Evolution API ───────────────────────────────────────────────────────────
@@ -822,9 +812,9 @@ ${existingPart}
   }, [mode, fetchWorlds, fetchConfig]);
 
   const soulFiles = {
-    soul:     { content: buildSoulMd(soulData, worldSeed, genealogyData),   ...SOUL_TABS[0] },
-    memory:   { content: buildMemoryMd(soulData, worldSeed, genealogyData), ...SOUL_TABS[1] },
-    skill:    { content: buildSkillMd(soulData, worldSeed),                 ...SOUL_TABS[2] },
+    soul:     { content: soulBundle?.soul_md   ?? buildSoulMd(soulData, worldSeed, genealogyData),   ...SOUL_TABS[0] },
+    memory:   { content: soulBundle?.memory_md ?? buildMemoryMd(soulData, worldSeed, genealogyData), ...SOUL_TABS[1] },
+    skill:    { content: soulBundle?.skill_md  ?? buildSkillMd(soulData, worldSeed),                 ...SOUL_TABS[2] },
     genealogy: { content: genealogyData ? JSON.stringify(genealogyData, null, 2) : "", ...SOUL_TABS[3] },
   };
 
@@ -1278,7 +1268,9 @@ ${existingPart}
                 {phase === "gen_soul" ? (
                   <div>
                     <div style={{ display: "flex", justifyContent: "center", gap: 5, marginBottom: 10 }}>
-                      {(genStep === "genealogy"
+                      {(genStep === "research"
+                        ? ["Wiki","考证","传统","角色","文献","史料"]
+                        : genStep === "genealogy"
                         ? ["时代","谱系","哲学","原型","根系","层⁵"]
                         : ["层⁶","层⁵","层⁴","层³","层²","层¹"]
                       ).map((w, i) => (
@@ -1291,7 +1283,7 @@ ${existingPart}
                       ))}
                     </div>
                     <div style={{ fontSize: 11, color: "#3a3020", letterSpacing: 2 }}>
-                      {genStep === "genealogy" ? "追溯谱系·铸造层⁵..." : "涵化灵魂·叠加六层界..."}
+                      {genStep === "research" ? "Wikipedia 考证·锚定真实来源..." : genStep === "genealogy" ? "追溯谱系·铸造层⁵..." : "涵化灵魂·叠加六层界..."}
                     </div>
                   </div>
                 ) : (
@@ -1503,7 +1495,7 @@ ${existingPart}
                 padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
                 borderRadius: 2, fontFamily: "inherit",
               }}>← 重新观测</button>
-              <button onClick={() => { setPhase("world"); setSoulData(null); setGenealogyData(null); setCharName(""); setCharContext(""); }} style={{
+              <button onClick={() => { setPhase("world"); setSoulData(null); setGenealogyData(null); setSoulBundle(null); setCharName(""); setCharContext(""); }} style={{
                 background: "none", border: `1px solid ${accentColor}44`, color: accentColor,
                 padding: "9px 24px", fontSize: 11, letterSpacing: 1, cursor: "pointer",
                 borderRadius: 2, fontFamily: "inherit",
