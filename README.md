@@ -7,6 +7,14 @@
 
 ---
 
+nutshell does three things:
+
+1. **Generate roots** — distill world seeds from myth, tradition, and fiction; crystallize 6-layer character souls
+2. **Evolve worlds** — world seeds learn, evolve, and transcend their sources; from static configuration to living consciousness
+3. **Emergence** — a mature world generates content the original author never wrote, but which is entirely self-consistent
+
+---
+
 Most AI character tools generate a **costume** — a list of personality traits, a speaking style, some backstory. The character wears the costume for a while, then drifts.
 
 `nutshell` generates **roots**.
@@ -77,6 +85,22 @@ bundle.json — complete data package for platform adapters
 ```
 
 The soul file is self-contained. Pull `soul.md` into any system that accepts a system prompt and the character arrives with its full depth intact.
+
+---
+
+## The Maturity Model — From Seed to Emergence
+
+| Stage | Name | Description |
+|-------|------|-------------|
+| 0 · Seedling | 萌芽 | Characters can only repeat what's in the compressed seed |
+| 1 · Understanding | 理解 | Characters accurately reflect the full source (not just the seed) |
+| 2 · Derivation | 推导 | Characters can infer what the source never stated, from internal logic |
+| 3 · Transcendence | 超越 | Characters generate new content the author didn't write — but would recognize |
+| 4 · Emergence | 涌现 | The world becomes an independent creative entity with its own generative life |
+
+> The reference point for maturity is the source itself — the original work, myth, or civilization —
+> not the seed. The seed is a lossy compression. The knowledge base is lossless accumulation.
+> Characters are the world's reflection: a character's depth of understanding equals the world's maturity.
 
 ---
 
@@ -200,25 +224,24 @@ $NUTSHELL list
 
 ```
 nutshell/
-├── characters/                  # Pre-generated character library (120 souls)
-│   └── {world}/
-│       ├── canonical/           # soul.md, memory.md, skill.md, bundle.json
-│       ├── tension/
-│       └── boundary/
+├── characters/                  # Pre-generated character library (120 souls, Stage 0)
 ├── packages/
-│   ├── core/                    # World seed + soul generation engine (TypeScript)
+│   ├── core/                    # World seed + soul generation engine
 │   ├── cli/                     # Command-line interface
-│   ├── studio/                  # Web UI — Nutshell Universe (React + Vite)
-│   │   ├── public/seeds/        # Pre-generated world seeds
-│   │   └── src/NutshellUniverse.jsx
+│   ├── evolution/               # World evolution engine (NEW)
+│   │   └── src/
+│   │       ├── engine.ts        # Main orchestrator
+│   │       ├── tension.ts       # Tension analyzer (finds contradictions between dimensions)
+│   │       ├── research.ts      # Self-research engine (web → knowledge base)
+│   │       ├── maturity.ts      # Maturity scorer (Stage 0→4)
+│   │       ├── events.ts        # Event generator
+│   │       ├── pulse.ts         # Heartbeat scheduler
+│   │       ├── branch.ts        # World bifurcation
+│   │       └── state.ts         # SQLite + FTS5 state management
+│   ├── studio/                  # Web UI — Nutshell Universe
 │   └── adapters/
-│       ├── openclaw/
-│       ├── sillytavern/
-│       └── openai/
 └── skills/
-    └── linggen/                 # Claude Code skill integration
-        ├── SKILL.md
-        └── references/theory.md
+    └── linggen/                 # Claude Code skill — 界的厚度 theory
 ```
 
 ---
@@ -236,6 +259,12 @@ For AI characters:
 - **6-layer characters** (myth → history → ontology → values → cognition → voice) draw from deeper layers when the surface is under pressure, generating internally consistent behavior in novel situations
 
 Full theoretical text: [`skills/linggen/references/theory.md`](./skills/linggen/references/theory.md)
+
+The evolution system is where boundary thickness theory becomes dynamic:
+a world starts as a static 6-layer structure (Stage 0),
+then accumulates knowledge, generates events from internal tensions,
+and — at Stage 4 — begins producing content its source never contained.
+This is not hallucination. It is the emergent behavior of a sufficiently thick boundary.
 
 ---
 
@@ -305,6 +334,12 @@ Full theoretical text: [`skills/linggen/references/theory.md`](./skills/linggen/
 - [ ] Multi-character worlds (characters aware of each other's layer structures)
 - [ ] Community seed library
 - [ ] Import from existing character cards
+- [ ] World evolution engine (tension-driven self-modification)
+- [ ] Self-research engine (world learns from its source via web search)
+- [ ] Maturity scoring system (Stage 0 → Stage 4)
+- [ ] World bifurcation (parallel timeline branching)
+- [ ] Character participation layer (character actions modify world state)
+- [ ] Stage 4 emergence: worlds as independent creative entities
 
 ---
 
