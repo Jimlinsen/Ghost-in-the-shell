@@ -362,4 +362,209 @@ program
     console.log();
   });
 
+// ─── EVOLVE ───────────────────────────────────────────────────────────────────
+
+const evolve = program.command("evolve").description("World evolution engine");
+
+evolve
+  .command("start")
+  .description("Start evolving a world from a seed file")
+  .requiredOption("--seed <path>", "Path to world seed JSON file")
+  .option("--tradition <key>", "Tradition key (e.g. fma, greek)")
+  .option("--pulses <n>", "Number of pulses to run (default: 1)", "1")
+  .action(async (opts) => {
+    const spinner = ora("Loading seed...").start();
+    try {
+      const { EvolutionEngine } = await import("@nutshell/evolution");
+      const seedRaw = await fs.readFile(path.resolve(opts.seed), "utf-8");
+      const seed = JSON.parse(seedRaw) as Record<string, string>;
+      const tradition = opts.tradition || seed["tradition_key"] || path.basename(opts.seed, ".json");
+
+      const engine = new EvolutionEngine();
+      const world = engine.createWorld(tradition, seed);
+      spinner.succeed(`World created: ${world.id}`);
+
+      const pulses = parseInt(opts.pulses, 10);
+      for (let i = 0; i < pulses; i++) {
+        const s = ora(`Pulse ${i + 1}/${pulses}...`).start();
+        const result = await engine.evolve(world.id);
+        s.succeed(
+          `Pulse ${result.pulse_number} — Stage: ${result.maturity.stage_name} ` +
+          `(${result.maturity.overall_score.toFixed(2)}) — ${result.events.length} events`
+        );
+        result.events.forEach(e => {
+          console.log(chalk.gray(`  [${e.event_type}] ${e.narrative.slice(0, 100)}...`));
+        });
+      }
+      engine.close();
+    } catch (err) {
+      spinner.fail(String(err));
+      process.exit(1);
+    }
+  });
+
+evolve
+  .command("watch")
+  .description("Continuously evolve a world")
+  .requiredOption("--world <id>", "World ID")
+  .option("--interval <ms>", "Pulse interval in ms", "60000")
+  .option("--max-pulses <n>", "Maximum pulses (0 = infinite)", "0")
+  .action(async (opts) => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine({
+      pulse_interval_ms: parseInt(opts.interval, 10),
+    });
+    const maxPulses = parseInt(opts.maxPulses, 10) || Infinity;
+    console.log(chalk.cyan(`Watching world ${opts.world} (interval: ${opts.interval}ms)...`));
+    await engine.watch(opts.world, {
+      maxPulses: isFinite(maxPulses) ? maxPulses : undefined,
+      onPulse: (result) => {
+        console.log(
+          chalk.green(`✓ Pulse ${result.pulse_number}`) +
+          ` — Stage: ${result.maturity.stage_name}` +
+          ` — ${result.events.length} events` +
+          ` — ${result.duration_ms}ms`
+        );
+      },
+    });
+    engine.close();
+  });
+
+evolve
+  .command("pulse")
+  .description("Run a single evolution pulse")
+  .requiredOption("--world <id>", "World ID")
+  .action(async (opts) => {
+    const spinner = ora("Running pulse...").start();
+    try {
+      const { EvolutionEngine } = await import("@nutshell/evolution");
+      const engine = new EvolutionEngine();
+      const result = await engine.evolve(opts.world);
+      spinner.succeed(`Pulse ${result.pulse_number} complete (${result.duration_ms}ms)`);
+      console.log(`Stage: ${result.maturity.stage_name} | Score: ${result.maturity.overall_score.toFixed(2)}`);
+      result.events.forEach(e => {
+        console.log(chalk.cyan(`  [${e.event_type}]`) + ` ${e.narrative.slice(0, 120)}...`);
+      });
+      engine.close();
+    } catch (err) {
+      spinner.fail(String(err));
+      process.exit(1);
+    }
+  });
+
+evolve
+  .command("maturity")
+  .description("Show world maturity report")
+  .requiredOption("--world <id>", "World ID")
+  .action(async (opts) => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine();
+    const report = await engine.getMaturity(opts.world, true);
+    console.log(chalk.bold(`\nMaturity Report: ${opts.world}`));
+    console.log(`Stage: ${chalk.cyan(report.stage_name)}`);
+    console.log(`Overall: ${chalk.yellow(report.overall_score.toFixed(2))}`);
+    console.log(`Source coverage: ${report.source_coverage.toFixed(2)}`);
+    console.log(`Derivation: ${report.derivation_quality.toFixed(2)}`);
+    console.log(`Transcendence: ${report.transcendence_score.toFixed(2)}`);
+    console.log(`Emergence: ${report.emergence_index.toFixed(2)}`);
+    if (report.weakest_dims.length) {
+      console.log(`Weakest dims: ${chalk.red(report.weakest_dims.join(", "))}`);
+    }
+    console.log(`Recommendation: ${chalk.green(report.recommendation)}`);
+    engine.close();
+  });
+
+evolve
+  .command("history")
+  .description("Show world event history")
+  .requiredOption("--world <id>", "World ID")
+  .option("--limit <n>", "Number of events", "20")
+  .action(async (opts) => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine();
+    const events = engine.getHistory(opts.world, parseInt(opts.limit, 10));
+    console.log(chalk.bold(`\nHistory: ${opts.world} (${events.length} events)`));
+    events.forEach(e => {
+      const ts = new Date(e.timestamp).toLocaleString();
+      console.log(chalk.gray(`\n[${ts}] [${e.event_type}] by ${e.actor_id}`));
+      console.log(e.narrative.slice(0, 200) + (e.narrative.length > 200 ? "..." : ""));
+    });
+    engine.close();
+  });
+
+evolve
+  .command("act")
+  .description("A character performs an action in the world")
+  .requiredOption("--world <id>", "World ID")
+  .requiredOption("--character <name>", "Character name")
+  .requiredOption("--action <text>", "Action description")
+  .option("--context <text>", "Additional context")
+  .action(async (opts) => {
+    const spinner = ora(`${opts.character} acts...`).start();
+    try {
+      const { EvolutionEngine } = await import("@nutshell/evolution");
+      const engine = new EvolutionEngine();
+      const event = await engine.characterAct(opts.world, {
+        character_name: opts.character,
+        action: opts.action,
+        context: opts.context,
+      });
+      spinner.succeed("Event generated");
+      console.log(chalk.cyan(`[${event.event_type}]`), event.narrative);
+      engine.close();
+    } catch (err) {
+      spinner.fail(String(err));
+      process.exit(1);
+    }
+  });
+
+evolve
+  .command("branch")
+  .description("Create a parallel branch world")
+  .requiredOption("--world <id>", "World ID")
+  .action(async (opts) => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine();
+    const branch = engine.branch(opts.world);
+    console.log(chalk.green(`Branch created: ${branch.id}`));
+    engine.close();
+  });
+
+evolve
+  .command("search")
+  .description("Search world event history")
+  .requiredOption("--world <id>", "World ID")
+  .requiredOption("--query <text>", "Search query")
+  .action(async (opts) => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine();
+    const results = engine.searchHistory(opts.world, opts.query);
+    console.log(chalk.bold(`\nSearch results for "${opts.query}": ${results.length} found`));
+    results.forEach(e => {
+      console.log(chalk.cyan(`\n[${e.event_type}]`), e.narrative.slice(0, 200));
+    });
+    engine.close();
+  });
+
+evolve
+  .command("list")
+  .description("List all worlds")
+  .action(async () => {
+    const { EvolutionEngine } = await import("@nutshell/evolution");
+    const engine = new EvolutionEngine();
+    const worlds = engine.listWorlds();
+    if (!worlds.length) {
+      console.log("No worlds found. Use `nutshell evolve start --seed <file>` to create one.");
+      return;
+    }
+    console.log(chalk.bold(`\nWorlds (${worlds.length}):`));
+    worlds.forEach(w => {
+      console.log(
+        `  ${chalk.cyan(w.id)} — ${w.tradition_key} — ` +
+        `Stage ${w.stage} — v${w.version} — ${w.pulse_count} pulses`
+      );
+    });
+    engine.close();
+  });
+
 program.parse();

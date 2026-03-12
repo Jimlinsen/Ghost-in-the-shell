@@ -3,15 +3,13 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
     "composite": true
   },
-  "references": [
-    { "path": "packages/core" },
-    { "path": "packages/cli" },
-    { "path": "packages/evolution" }
-  ]
+  "include": ["src"]
 }

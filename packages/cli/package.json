@@ -8,6 +8,7 @@
   "scripts": { "build": "tsc", "dev": "tsc --watch" },
   "dependencies": {
     "@nutshell/core": "^0.1.0",
+    "@nutshell/evolution": "^0.1.0",
     "@nutshell/adapter-openclaw": "^0.1.0",
     "@nutshell/adapter-sillytavern": "^0.1.0",
     "@nutshell/adapter-openai": "^0.1.0",
