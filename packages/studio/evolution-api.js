@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { spawn } from "child_process";
+import { EvolutionEngine } from "@nutshell/evolution";
 
 function callClaude(prompt) {
   return new Promise((resolve, reject) => {
@@ -50,21 +51,27 @@ function json(res, data, status = 200) {
 }
 
 let _engine = null;
-let _useMock = false;
 const cfgPath = path.join(os.homedir(), ".nutshell", "config.json");
 
-async function getEngine() {
+function readCfg() {
+  try { return JSON.parse(fs.readFileSync(cfgPath, "utf-8")); } catch { return {}; }
+}
+
+function isMock(cfg) {
+  return !(cfg.api_key || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY);
+}
+
+function getEngine() {
   if (_engine) return _engine;
-  const { EvolutionEngine } = await import("@nutshell/evolution");
-  let cfg = {};
-  try { cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")); } catch {}
-  const llm = _useMock
+  const cfg = readCfg();
+  const mock = isMock(cfg);
+
+  const llm = mock
     ? { provider: "custom", model: "claude-cli", api_key: "mock", base_url: "http://localhost:5173/api/evo-mock" }
     : { provider: cfg.provider ?? "anthropic", model: cfg.model ?? "claude-sonnet-4-20250514", api_key: cfg.api_key ?? process.env.ANTHROPIC_API_KEY ?? process.env.OPENAI_API_KEY };
 
-  const mockSearchFn = _useMock
+  const mockSearchFn = mock
     ? async (query) => {
-        // Generate seed-based fake search results without hitting the network
         const snippet = `关于"${query}"的相关知识：此传统世界拥有丰富的神话体系与文化积淀，其中涉及神灵、人物与事件的复杂关系网络。`;
         return [
           { query, url: "mock://seed/1", title: query, snippet },
@@ -77,21 +84,66 @@ async function getEngine() {
     llm,
     language: cfg.language === "auto" ? "zh" : (cfg.language ?? "zh"),
     ...(mockSearchFn ? { searchFn: mockSearchFn } : {}),
-    skip_bifurcation: _useMock,
+    skip_bifurcation: mock,
   });
   return _engine;
 }
 
-export function evolutionApiPlugin(seedsDir, useMock = false) {
-  _useMock = useMock;
-  _engine = null; // reset so getEngine() re-creates with correct config
+export function evolutionApiPlugin(seedsDir) {
+  _engine = null;
   return {
     name: "evolution-api",
     configureServer(server) {
 
+      // ── Unified LLM proxy for soul generation ────────────────────────────────
+      // POST /api/llm/messages  →  proxies to Anthropic or Claude CLI
+      server.middlewares.use("/api/llm/messages", async (req, res) => {
+        if (req.method === "OPTIONS") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+          res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,x-api-key,anthropic-version");
+          res.statusCode = 204; return res.end();
+        }
+        if (req.method !== "POST") { res.statusCode = 405; return res.end(); }
+        const cfg = readCfg();
+        const apiKey = cfg.api_key || process.env.ANTHROPIC_API_KEY;
+        const body = await parseBody(req);
+
+        if (!apiKey) {
+          // No key — use Claude CLI mock
+          const msgs = body.messages ?? [];
+          const sys = msgs.find(m => m.role === "system")?.content ?? "";
+          const usr = msgs.filter(m => m.role === "user").map(m => m.content).join("\n");
+          const prompt = sys ? `${sys}\n\n${usr}` : usr;
+          try {
+            const text = await callClaude(prompt);
+            return json(res, { id: "mock-" + Date.now(), content: [{ type: "text", text }], model: "claude-cli", stop_reason: "end_turn", usage: { input_tokens: 0, output_tokens: 0 } });
+          } catch(e) { return json(res, { error: { message: e.message } }, 500); }
+        }
+
+        // Forward to Anthropic
+        try {
+          const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify(body),
+          });
+          const data = await upstream.json();
+          res.statusCode = upstream.status;
+          res.setHeader("Content-Type", "application/json");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.end(JSON.stringify(data));
+        } catch(e) { json(res, { error: { message: e.message } }, 500); }
+      });
+
       // ── Mock LLM endpoint (OpenAI-compatible chat completions via Claude CLI) ──
-      if (useMock) {
-        server.middlewares.use("/api/evo-mock/v1/chat/completions", async (req, res) => {
+      // Always registered; only active when no real API key is configured.
+      server.middlewares.use("/api/evo-mock/v1/chat/completions", async (req, res) => {
+          if (!isMock(readCfg())) { res.statusCode = 404; return res.end(); }
           if (req.method === "OPTIONS") {
             res.setHeader("Access-Control-Allow-Origin", "*");
             res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
@@ -114,7 +166,6 @@ export function evolutionApiPlugin(seedsDir, useMock = false) {
             json(res, { error: { message: e.message } }, 500);
           }
         });
-      }
 
       server.middlewares.use("/api/evolution", async (req, res, next) => {
         // Connect strips the prefix, so req.url here is e.g. "/worlds"

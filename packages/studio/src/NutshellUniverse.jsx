@@ -523,7 +523,7 @@ export default function NutshellUniverse() {
     // Custom input or missing seed file: call AI
     const query = customWorld.trim() || (trad ? `${trad.label}（${trad.sub}）` : "");
     try {
-      const res = await fetch("/api/anthropic/v1/messages", {
+      const res = await fetch("/api/llm/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -554,7 +554,7 @@ export default function NutshellUniverse() {
     setError(null);
 
     const callAI = async (userContent) => {
-      const res = await fetch("/api/anthropic/v1/messages", {
+      const res = await fetch("/api/llm/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -764,7 +764,7 @@ ${existingPart}
 4. 不重复现有记忆已有内容
 5. 只输出新增条目，格式为 Markdown，以 "---" 分隔每条记忆`;
 
-      const res = await fetch("/api/anthropic/v1/messages", {
+      const res = await fetch("/api/llm/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1579,7 +1579,7 @@ ${existingPart}
                 <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a6a8a", textTransform: "uppercase", marginBottom: 18 }}>
                   引擎配置
                   <span style={{ marginLeft: 12, color: evoConfig.has_key ? "#4a7a4a" : "#7a4a3a", fontSize: 9 }}>
-                    {evoConfig.has_key ? "● API Key 已配置" : "○ 未配置 — 使用 Mock 模式"}
+                    {evoConfig.has_key ? "● API Key 已配置 · 灵魂涵化 + 世界演化共用" : "○ 未配置 — 两个模块均使用 Mock 模式"}
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
