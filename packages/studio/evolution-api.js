@@ -298,10 +298,11 @@ export function evolutionApiPlugin(seedsDir) {
             let existing = {};
             try { existing = JSON.parse(fs.readFileSync(cfgPath, "utf-8")); } catch {}
             const next = { ...existing };
-            if (body.provider) next.provider = body.provider;
-            if (body.model)    next.model    = body.model;
+            if (body.provider)  next.provider  = body.provider;
+            if (body.model)     next.model     = body.model;
             if (body.api_key && !body.api_key.startsWith("••••")) next.api_key = body.api_key;
-            if (body.language) next.language = body.language;
+            if (body.language)  next.language  = body.language;
+            if (body.base_url)  next.base_url  = body.base_url;
             fs.mkdirSync(path.dirname(cfgPath), { recursive: true });
             fs.writeFileSync(cfgPath, JSON.stringify(next, null, 2));
             _engine = null; // force re-init with new config

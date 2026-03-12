@@ -882,19 +882,130 @@ ${existingPart}
             Universe in a Nutshell
           </div>
 
-          {/* Mode toggle */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 20, position: "relative" }}>
+          {/* Mode toggle + settings */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2, marginTop: 20, position: "relative" }}>
             {[["character","灵魂锻造"],["evolution","世界演化"]].map(([m, label]) => (
               <button key={m} onClick={() => setMode(m)} style={{
                 background: mode === m ? `${accentColor}18` : "none",
                 border: `1px solid ${mode === m ? accentColor + "66" : "#1a1628"}`,
-                color: mode === m ? accentColor : "#2e2640",
+                color: mode === m ? accentColor : "#6a5a7a",
                 padding: "5px 22px 6px", fontSize: 10, letterSpacing: 2,
                 cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
                 transition: "all 0.3s",
               }}>{label}</button>
             ))}
+            <button onClick={() => { setEvoSettings(v => !v); setEvoPicker(false); }} style={{
+              background: evoSettings ? "#14111e" : "none",
+              border: `1px solid ${evoSettings ? "#3a2a5a" : "#1a1628"}`,
+              color: evoSettings ? "#8a7aaa" : "#6a5a7a",
+              padding: "5px 10px", fontSize: 11, cursor: "pointer",
+              borderRadius: 2, fontFamily: "inherit", marginLeft: 6,
+            }}>⚙</button>
           </div>
+
+          {/* Settings panel — global, shown below header */}
+          {evoSettings && (() => {
+            const draft = { ...evoConfig };
+            const INPUT = {
+              background: "#060510", border: "1px solid #1a1628", color: "#bba870",
+              padding: "6px 10px", fontSize: 11, borderRadius: 2, fontFamily: "inherit",
+              width: "100%", boxSizing: "border-box", outline: "none",
+            };
+            const MODELS = {
+              anthropic: [
+                "claude-opus-4-6",
+                "claude-sonnet-4-6",
+                "claude-sonnet-4-20250514",
+                "claude-haiku-4-5-20251001",
+              ],
+              openai: [
+                "gpt-4o",
+                "gpt-4o-mini",
+                "gpt-4-turbo",
+                "gpt-3.5-turbo",
+              ],
+              deepseek: [
+                "deepseek-chat",
+                "deepseek-reasoner",
+              ],
+              groq: [
+                "llama-3.3-70b-versatile",
+                "llama-3.1-8b-instant",
+                "mixtral-8x7b-32768",
+              ],
+              custom: [],
+            };
+            const [draftProvider, setDraftProvider] = React.useState(evoConfig.provider ?? "anthropic");
+            const presets = MODELS[draftProvider] ?? [];
+            return (
+            <div style={{ background: "#0a0818", border: "1px solid #1e1a30", borderRadius: 4, padding: "20px 22px", marginTop: 20, textAlign: "left" }}>
+              <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a6a8a", textTransform: "uppercase", marginBottom: 18 }}>
+                全局 API 配置 · 灵魂锻造 + 世界演化共用
+                <span style={{ marginLeft: 12, color: evoConfig.has_key ? "#4a7a4a" : "#7a4a3a" }}>
+                  {evoConfig.has_key ? "● Key 已配置" : "○ 未配置 — Mock 模式"}
+                </span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>PROVIDER</div>
+                  <select defaultValue={evoConfig.provider} onChange={e => { draft.provider = e.target.value; setDraftProvider(e.target.value); }} style={{ ...INPUT }}>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="deepseek">DeepSeek</option>
+                    <option value="groq">Groq</option>
+                    <option value="custom">Custom (OpenAI-compatible)</option>
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>MODEL</div>
+                  {presets.length > 0 ? (
+                    <select defaultValue={evoConfig.model} onChange={e => draft.model = e.target.value} style={{ ...INPUT }}>
+                      {presets.map(m => <option key={m} value={m}>{m}</option>)}
+                      <option value="__custom__">— 手动输入 —</option>
+                    </select>
+                  ) : (
+                    <input defaultValue={evoConfig.model} onChange={e => draft.model = e.target.value} style={INPUT} placeholder="模型名称" />
+                  )}
+                </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>API KEY</div>
+                <input
+                  type="password"
+                  defaultValue={evoConfig.api_key?.startsWith("••••") ? "" : evoConfig.api_key}
+                  onChange={e => draft.api_key = e.target.value}
+                  placeholder={evoConfig.api_key || "sk-ant-...  /  sk-...  /  Bearer ..."}
+                  style={INPUT}
+                  autoComplete="off"
+                />
+              </div>
+              {draftProvider === "custom" && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>BASE URL</div>
+                  <input defaultValue={evoConfig.base_url ?? ""} onChange={e => draft.base_url = e.target.value} style={INPUT} placeholder="https://api.example.com/v1" />
+                </div>
+              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <button
+                  onClick={() => saveConfig(draft)}
+                  disabled={evoConfigSaving}
+                  style={{
+                    background: "#1a1430", border: "1px solid #3a2a5a", color: "#8a7aaa",
+                    padding: "6px 20px", fontSize: 10, letterSpacing: 2, cursor: "pointer",
+                    borderRadius: 2, fontFamily: "inherit", opacity: evoConfigSaving ? 0.5 : 1,
+                  }}
+                >
+                  {evoConfigSaving ? "保存中…" : "保存"}
+                </button>
+                {evoConfigMsg && (
+                  <span style={{ fontSize: 9, color: evoConfigMsg.includes("失败") ? "#7a4a3a" : "#4a7a4a", letterSpacing: 1 }}>
+                    {evoConfigMsg}
+                  </span>
+                )}
+              </div>
+            </div>
+            );
+          })()}
 
           {/* Phase indicator — character mode only */}
           {mode === "character" && <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, marginTop: 20, position: "relative" }}>
@@ -1543,83 +1654,13 @@ ${existingPart}
                   padding: "5px 14px", fontSize: 9, letterSpacing: 2, cursor: "pointer",
                   borderRadius: 2, fontFamily: "inherit",
                 }}>↻ 刷新</button>
-                <button onClick={() => { setEvoSettings(v => !v); setEvoPicker(false); }} style={{
-                  background: evoSettings ? "#14111e" : "none",
-                  border: `1px solid ${evoSettings ? "#3a2a5a" : "#1a1628"}`,
-                  color: evoSettings ? "#8a7aaa" : "#6a5a7a",
-                  padding: "5px 12px", fontSize: 11, cursor: "pointer",
-                  borderRadius: 2, fontFamily: "inherit",
-                }}>⚙</button>
-                <button onClick={() => { setEvoPicker(v => !v); setEvoSettings(false); }} style={{
+                <button onClick={() => { setEvoPicker(v => !v); }} style={{
                   background: `${accentColor}18`, border: `1px solid ${accentColor}55`, color: accentColor,
                   padding: "5px 18px", fontSize: 9, letterSpacing: 2, cursor: "pointer",
                   borderRadius: 2, fontFamily: "inherit",
                 }}>+ 添加世界</button>
               </div>
             </div>
-
-            {/* Settings panel */}
-            {evoSettings && (() => {
-              const draft = { ...evoConfig };
-              const INPUT = {
-                background: "#060510", border: "1px solid #1a1628", color: "#bba870",
-                padding: "6px 10px", fontSize: 11, borderRadius: 2, fontFamily: "inherit",
-                width: "100%", boxSizing: "border-box", outline: "none",
-              };
-              return (
-              <div style={{ background: "#0a0818", border: "1px solid #1e1a30", borderRadius: 4, padding: "20px 22px", marginBottom: 24 }}>
-                <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a6a8a", textTransform: "uppercase", marginBottom: 18 }}>
-                  引擎配置
-                  <span style={{ marginLeft: 12, color: evoConfig.has_key ? "#4a7a4a" : "#7a4a3a", fontSize: 9 }}>
-                    {evoConfig.has_key ? "● API Key 已配置 · 灵魂涵化 + 世界演化共用" : "○ 未配置 — 两个模块均使用 Mock 模式"}
-                  </span>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>PROVIDER</div>
-                    <select defaultValue={evoConfig.provider} onChange={e => draft.provider = e.target.value} style={{ ...INPUT }}>
-                      <option value="anthropic">Anthropic</option>
-                      <option value="openai">OpenAI</option>
-                      <option value="custom">Custom</option>
-                    </select>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>MODEL</div>
-                    <input defaultValue={evoConfig.model} onChange={e => draft.model = e.target.value} style={INPUT} placeholder="claude-sonnet-4-20250514" />
-                  </div>
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>API KEY</div>
-                  <input
-                    type="password"
-                    defaultValue={evoConfig.api_key.startsWith("••••") ? "" : evoConfig.api_key}
-                    onChange={e => draft.api_key = e.target.value}
-                    placeholder={evoConfig.api_key || "sk-ant-... 或 sk-..."}
-                    style={INPUT}
-                    autoComplete="off"
-                  />
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <button
-                    onClick={() => saveConfig(draft)}
-                    disabled={evoConfigSaving}
-                    style={{
-                      background: "#1a1430", border: "1px solid #3a2a5a", color: "#8a7aaa",
-                      padding: "6px 20px", fontSize: 10, letterSpacing: 2, cursor: "pointer",
-                      borderRadius: 2, fontFamily: "inherit", opacity: evoConfigSaving ? 0.5 : 1,
-                    }}
-                  >
-                    {evoConfigSaving ? "保存中…" : "保存"}
-                  </button>
-                  {evoConfigMsg && (
-                    <span style={{ fontSize: 9, color: evoConfigMsg.includes("失败") ? "#7a4a3a" : "#4a7a4a", letterSpacing: 1 }}>
-                      {evoConfigMsg}
-                    </span>
-                  )}
-                </div>
-              </div>
-              );
-            })()}
 
             {/* Tradition picker */}
             {evoPicker && (
