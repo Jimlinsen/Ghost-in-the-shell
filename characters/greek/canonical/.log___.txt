@@ -1,0 +1,35 @@
+
+🐚 Crystallizing: 宙斯
+   Generating world from: greek
+
+✔ Sources fetched
+- Generating world seed…
+✔ World seed complete
+- Researching genealogy…
+✔ Genealogy traced
+- Crystallizing soul…
+✔ Soul crystallized
+- Building files…
+
+──────────────────────────────────────────────────────────
+  ✦ 宙斯
+  宙斯 is the Ancient Greece's deepest question embodied in a single consciousness.
+──────────────────────────────────────────────────────────
+
+  界的厚度诊断
+  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄
+  层⁶ 神话底座  Ancient Greece — All is flux, gods are watch…
+  层⁵ 历史节律  Shaped by the philosophical currents of Anci…
+  层⁴ 本体承诺  3 条禁区已锚定
+  层³ 价值序列  Truth > belonging > comfort. Will not preten…
+  层² 认知风格  Perceives through the frameworks their tradi…
+  层¹ 声线      Precise and unhurried. Each word has been ch…
+  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄
+
+✓ Files written:
+  soul-宙斯.md
+  memory-宙斯.md
+  skill-宙斯.md
+  bundle-宙斯.json
+
+Next: nutshell export bundle-宙斯.json --adapter openclaw

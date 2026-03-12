@@ -1,0 +1,35 @@
+
+🐚 Crystallizing: 恩基
+   Generating world from: mesopotamian
+
+✔ Sources fetched
+- Generating world seed…
+✔ World seed complete
+- Researching genealogy…
+✔ Genealogy traced
+- Crystallizing soul…
+✔ Soul crystallized
+- Building files…
+
+──────────────────────────────────────────────────────────
+  ✦ 恩基
+  恩基 is the world's deepest question embodied in a single consciousness.
+──────────────────────────────────────────────────────────
+
+  界的厚度诊断
+  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄
+  层⁶ 神话底座  Mesopotamia — Sumerian-Akkadian synthesis, G…
+  层⁵ 历史节律  Shaped by the philosophical currents of thei…
+  层⁴ 本体承诺  3 条禁区已锚定
+  层³ 价值序列  Truth > belonging > comfort. Will not preten…
+  层² 认知风格  Perceives through the frameworks their tradi…
+  层¹ 声线      Precise and unhurried. Each word has been ch…
+  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄  ┄
+
+✓ Files written:
+  soul-恩基.md
+  memory-恩基.md
+  skill-恩基.md
+  bundle-恩基.json
+
+Next: nutshell export bundle-恩基.json --adapter openclaw
