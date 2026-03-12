@@ -337,6 +337,25 @@ export class WorldStateDB {
     return this.createWorld(parent.tradition_key, { ...parent.seed }, parent_id);
   }
 
+  // ─── WORLD MANAGEMENT ─────────────────────────────────────────────────────
+
+  deleteWorld(world_id: string): void {
+    this.db.prepare("DELETE FROM world_events WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM tension_points WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM knowledge_base WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM maturity_log WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM worlds WHERE id = ?").run(world_id);
+  }
+
+  resetPulseCount(world_id: string): void {
+    this.db.prepare(
+      "UPDATE worlds SET pulse_count = 0, last_pulse_at = 0, stage = 0 WHERE id = ?"
+    ).run(world_id);
+    this.db.prepare("DELETE FROM world_events WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM tension_points WHERE world_id = ?").run(world_id);
+    this.db.prepare("DELETE FROM maturity_log WHERE world_id = ?").run(world_id);
+  }
+
   // ─── CLEANUP ──────────────────────────────────────────────────────────────
 
   close(): void {

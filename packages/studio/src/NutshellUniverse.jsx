@@ -111,16 +111,22 @@ const WORLD_PROMPT = `你是世界种子生成器，精通神话学（坎贝尔,
   "seed_essence": "种子精髓（200字）：读完这段，应能感受到这个世界的呼吸方式——它的意识形态基底是什么思想力量的凝聚？"
 }`;
 
-const makeGenealogyPrompt = (worldSeed, character, context) =>
-`你是神话学谱系研究者，精通比较神话学、哲学史、文学谱系分析。
+const makeGenealogyPrompt = (worldSeed, character, context, evoHistory = null) => {
+  const EVT = { tension: "张力", character_action: "角色行动", transcendence: "超越", knowledge: "知识", research: "研究" };
+  const histBlock = evoHistory?.length > 0
+    ? `\n【演化历史 — 此世界已发生的真实事件】\n角色的时代坐标应在这些事件的背景下确定。\n\n${
+        evoHistory.slice(0, 6).map(e => `· [${EVT[e.event_type] ?? e.event_type}] ${(e.narrative || "").slice(0, 150)}`).join("\n\n")
+      }\n`
+    : "";
+  return `你是神话学谱系研究者，精通比较神话学、哲学史、文学谱系分析。
 
 世界种子：
 ${JSON.stringify({ tradition_name: worldSeed.tradition_name, tagline: worldSeed.tagline, tension: worldSeed.tension, divine_human: worldSeed.divine_human, seed_essence: worldSeed.seed_essence }, null, 2)}
-
+${histBlock}
 角色：${character}
 ${context ? `背景：${context}` : ""}
 
-任务：生成角色的界的层⁵（历史周期）——角色的时代坐标与思想根系。这是世界种子通过特定历史节点涌现为这个角色的路径。
+任务：生成角色的界的层⁵（历史周期）——角色的时代坐标与思想根系。这是世界种子通过特定历史节点涌现为这个角色的路径。${evoHistory?.length > 0 ? "【注意】角色的时代坐标要具体落在上方演化历史中的某个事件节点上，体现出角色是这些已发生事件的产物。" : ""}
 
 输出严格JSON（只输出JSON，所有字段中文）：
 {
@@ -131,13 +137,20 @@ ${context ? `背景：${context}` : ""}
   "world_seed_bond": "种子连接：角色从世界种子的哪个维度涌现——创世论/时间观/人神关系/核心张力（80字）",
   "layer_map": "层级映射——层⁶[神话周期]:一句话 | 层⁵[历史周期]:一句话 | 层⁴[本体论承诺]:一句话 | 层³[价值排序]:一句话 | 层²[认知风格]:一句话 | 层¹[说话风格]:一句话"
 }`;
+};
 
-const makeSoulPrompt = (worldSeed, genealogy, character, context) =>
-`你是灵犀涵化炉，精通神话学、唯识学、角色溯源。
+const makeSoulPrompt = (worldSeed, genealogy, character, context, evoHistory = null) => {
+  const EVT = { tension: "张力", character_action: "角色行动", transcendence: "超越", knowledge: "知识", research: "研究" };
+  const histBlock = evoHistory?.length > 0
+    ? `\n【层⁶.5 演化历史 — 此世界已真实发生的事件】\n以下是这个世界激活后经历的演化事件。角色的 formative_events 字段必须优先从这些真实历史取材——角色在这些事件之后出现，或在这段历史的阴影中成长，而非只引用原作中的通用场景。\n\n${
+        evoHistory.slice(0, 8).map(e => `· [${EVT[e.event_type] ?? e.event_type}] ${(e.narrative || "").slice(0, 200)}`).join("\n\n")
+      }\n`
+    : "";
+  return `你是灵犀涵化炉，精通神话学、唯识学、角色溯源。
 
 【层⁶ 神话周期 — 世界种子】
 ${JSON.stringify({ tradition_name: worldSeed.tradition_name, tagline: worldSeed.tagline, cosmogony: worldSeed.cosmogony, tension: worldSeed.tension, divine_human: worldSeed.divine_human, aesthetic: worldSeed.aesthetic, seed_essence: worldSeed.seed_essence }, null, 2)}
-
+${histBlock}
 【层⁵ 历史周期 — 谱系】
 ${JSON.stringify(genealogy, null, 2)}
 
@@ -158,13 +171,14 @@ ${context ? `背景：${context}` : ""}
   "stance": "【层³ 价值排序】他最在乎的价值排序，来自世界种子的张力结构（100字）",
   "taboos": "【层⁴ 本体论承诺】绝对禁止：他永远不会做的3件事，及其世界观根源（80字）",
   "world_model": "世界模型：他用世界种子的框架如何理解当前处境——3-5条具体认知（100字）",
-  "formative_events": "塑造事件：3个来自他所在传统/原著的关键时刻，每个30字（100字）",
+  "formative_events": "${evoHistory?.length > 0 ? "塑造事件：3个关键时刻，必须优先引用上方演化历史中的真实事件，每个30字（100字）" : "塑造事件：3个来自他所在传统/原著的关键时刻，每个30字（100字）"}",
   "current_concerns": "当前关切：他现在最在意的3件事，具体可操作（80字）",
   "knowledge_boundary": "知识边界：他精通什么，不知道/不关心什么（60字）",
   "activation": "激活条件：什么情况下他出现，什么信号触发他（80字）",
   "core_capabilities": "核心能力：他最擅长的3类任务及标准（100字）",
   "failure_modes": "【界的风险】失败模式：他容易犯的2个错及预防（60字）"
 }`;
+};
 
 // ─── CANVAS STARFIELD ─────────────────────────────────────────────────────────
 
@@ -460,6 +474,27 @@ export default function NutshellUniverse() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(null);
 
+  // ── Evolution mode ──────────────────────────────────────────────────────────
+  const [mode, setMode] = useState("character"); // "character" | "evolution"
+  const [evoWorlds, setEvoWorlds] = useState([]);
+  const [evoLoading, setEvoLoading] = useState(false);
+  const [evoSelected, setEvoSelected] = useState(null);   // world id
+  const [evoHistory, setEvoHistory] = useState([]);
+  const [evoMaturity, setEvoMaturity] = useState({});     // worldId → maturity object
+  const [evoGenerating, setEvoGenerating] = useState(null); // world id generating events
+  const [evoGenResult, setEvoGenResult] = useState(null);
+  const [evoPicker, setEvoPicker] = useState(false);
+  const [evoSoulCtx, setEvoSoulCtx] = useState(null);    // { world, events } injected into soul gen
+  const [evoSyncTarget, setEvoSyncTarget] = useState(null); // world id being synced
+  const [evoSyncCharName, setEvoSyncCharName] = useState("");
+  const [evoSyncMemory, setEvoSyncMemory] = useState("");
+  const [evoSyncing, setEvoSyncing] = useState(false);
+  const [evoSyncResult, setEvoSyncResult] = useState(null);
+  const [evoSettings, setEvoSettings] = useState(false);   // settings panel open
+  const [evoConfig, setEvoConfig] = useState({ provider: "anthropic", model: "claude-sonnet-4-20250514", api_key: "", language: "zh", has_key: false });
+  const [evoConfigSaving, setEvoConfigSaving] = useState(false);
+  const [evoConfigMsg, setEvoConfigMsg] = useState(null);
+
   const accentColor = selectedTrad
     ? TRADITIONS.find(t => t.id === selectedTrad)?.color || "#c9a84c"
     : "#c9a84c";
@@ -536,18 +571,37 @@ export default function NutshellUniverse() {
       return JSON.parse(match[0]);
     };
 
+    // ── Fetch evolution context for this tradition ──
+    let soulEvoCtx = null;
+    try {
+      const tradKey = worldSeed.tradition_key || selectedTrad;
+      const matched = evoWorlds.find(w =>
+        w.tradition_key === tradKey ||
+        w.tradition_key === selectedTrad ||
+        w.seed?.tradition_name === worldSeed.tradition_name
+      );
+      if (matched && matched.pulse_count > 0) {
+        const events = await fetch(`/api/evolution/worlds/${encodeURIComponent(matched.id)}/history?limit=15`)
+          .then(r => r.ok ? r.json() : []).catch(() => []);
+        if (events.length > 0) {
+          soulEvoCtx = { world: matched, events };
+          setEvoSoulCtx(soulEvoCtx);
+        }
+      }
+    } catch { /* evolution context is optional */ }
+
     try {
       // Step 1: genealogy (层⁵)
       setGenStep("genealogy");
       const genealogy = await callAI(
-        makeGenealogyPrompt(worldSeed, charName.trim(), charContext.trim())
+        makeGenealogyPrompt(worldSeed, charName.trim(), charContext.trim(), soulEvoCtx?.events ?? null)
       );
       setGenealogyData(genealogy);
 
       // Step 2: soul (层¹-⁴, grounded in layers 5-6)
       setGenStep("soul");
       const soul = await callAI(
-        makeSoulPrompt(worldSeed, genealogy, charName.trim(), charContext.trim())
+        makeSoulPrompt(worldSeed, genealogy, charName.trim(), charContext.trim(), soulEvoCtx?.events ?? null)
       );
       setSoulData(soul);
       setActiveTab("soul");
@@ -558,7 +612,7 @@ export default function NutshellUniverse() {
     } finally {
       setGenStep("");
     }
-  }, [worldSeed, charName, charContext]);
+  }, [worldSeed, charName, charContext, selectedTrad, evoWorlds]);
 
   const fileInputRef = useRef(null);
 
@@ -618,6 +672,155 @@ export default function NutshellUniverse() {
     setGenealogyData(null); setSoulData(null); setError(null);
   };
 
+  // ── Evolution API ───────────────────────────────────────────────────────────
+  const evoApi = useCallback(async (path, opts = {}) => {
+    const res = await fetch(`/api/evolution${path}`, {
+      ...opts,
+      headers: { "Content-Type": "application/json", ...opts.headers },
+    });
+    if (!res.ok) { const t = await res.text(); throw new Error(t); }
+    return res.json();
+  }, []);
+
+  const fetchWorlds = useCallback(async () => {
+    setEvoLoading(true);
+    try {
+      const all = await evoApi("/worlds");
+      // Only show root worlds; branches are internal evolution snapshots
+      setEvoWorlds(all.filter(w => !w.parent_world_id));
+    } finally { setEvoLoading(false); }
+  }, [evoApi]);
+
+  const createEvoWorld = useCallback(async (tradition) => {
+    const world = await evoApi("/worlds", { method: "POST", body: JSON.stringify({ tradition }) });
+    setEvoWorlds(prev => prev.find(w => w.id === world.id) ? prev.map(w => w.id === world.id ? world : w) : [...prev, world]);
+    setEvoPicker(false);
+    return world;
+  }, [evoApi]);
+
+  const refreshWorldDetail = useCallback(async (worldId) => {
+    const [events, mat] = await Promise.all([
+      evoApi(`/worlds/${worldId}/history?limit=30`),
+      evoApi(`/worlds/${worldId}/maturity`).catch(() => null),
+    ]);
+    setEvoHistory(events);
+    if (mat) setEvoMaturity(prev => ({ ...prev, [worldId]: mat }));
+  }, [evoApi]);
+
+  const generateEvents = useCallback(async (worldId) => {
+    setEvoGenerating(worldId);
+    setEvoGenResult(null);
+    try {
+      const result = await evoApi(`/worlds/${worldId}/pulse`, { method: "POST" });
+      setEvoGenResult({ worldId, events: result.events ?? [] });
+      await fetchWorlds();
+      await refreshWorldDetail(worldId);
+    } catch(e) {
+      setEvoGenResult({ worldId, error: e.message });
+    } finally {
+      setEvoGenerating(null);
+    }
+  }, [evoApi, fetchWorlds, refreshWorldDetail]);
+
+  const selectEvoWorld = useCallback(async (worldId) => {
+    if (evoSelected === worldId) { setEvoSelected(null); setEvoHistory([]); return; }
+    setEvoSelected(worldId);
+    await refreshWorldDetail(worldId);
+  }, [evoApi, evoSelected, refreshWorldDetail]);
+
+  const syncMemory = useCallback(async (worldId) => {
+    const name = evoSyncCharName.trim();
+    if (!name) return;
+    setEvoSyncing(true);
+    setEvoSyncResult(null);
+    try {
+      const world = evoWorlds.find(w => w.id === worldId);
+      const events = await evoApi(`/worlds/${worldId}/history?limit=20`).catch(() => []);
+      const EVT = { tension: "张力", character_action: "角色行动", transcendence: "超越", knowledge: "知识", research: "研究" };
+      const eventsList = events.slice(0, 12)
+        .map(e => `[${EVT[e.event_type] ?? e.event_type}] ${(e.narrative || "").slice(0, 200)}`)
+        .join("\n\n");
+      if (!eventsList) throw new Error("该世界尚无演化事件，请先生成事件");
+
+      const existingPart = evoSyncMemory.trim()
+        ? `\n【角色现有记忆文件】\n${evoSyncMemory.trim().slice(0, 2000)}`
+        : "\n（角色尚无记忆文件，请生成初始记忆条目）";
+
+      const prompt = `你是灵犀记忆同步器。根据世界近期发生的真实事件，为角色生成新的记忆条目。
+
+【世界】${world?.seed?.tradition_name ?? world?.tradition_key ?? worldId}
+【世界核心张力】${world?.seed?.tension ?? ""}
+
+【世界近期事件】
+${eventsList}
+${existingPart}
+
+【角色名】${name}
+
+生成规则：
+1. 角色以第一人称视角"亲历"或"间接感知"这些世界事件，写出角色对这些事件的主观记忆
+2. 每个重要事件 1-2 条记忆，每条 40-80 字
+3. 保持角色的声音和价值观，与现有记忆风格一致
+4. 不重复现有记忆已有内容
+5. 只输出新增条目，格式为 Markdown，以 "---" 分隔每条记忆`;
+
+      const res = await fetch("/api/anthropic/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1200,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      const content = data.content?.[0]?.text || "";
+      setEvoSyncResult({ worldId, content });
+    } catch(e) {
+      setEvoSyncResult({ worldId, error: e.message });
+    } finally {
+      setEvoSyncing(false);
+    }
+  }, [evoWorlds, evoApi, evoSyncCharName, evoSyncMemory]);
+
+  const fetchConfig = useCallback(async () => {
+    try {
+      const cfg = await evoApi("/config");
+      setEvoConfig(cfg);
+    } catch {}
+  }, [evoApi]);
+
+  const saveConfig = useCallback(async (draft) => {
+    setEvoConfigSaving(true);
+    setEvoConfigMsg(null);
+    try {
+      await evoApi("/config", { method: "POST", body: JSON.stringify(draft) });
+      setEvoConfigMsg("已保存，引擎将在下次生成事件时重新初始化");
+      await fetchConfig();
+    } catch(e) {
+      setEvoConfigMsg("保存失败：" + e.message);
+    } finally {
+      setEvoConfigSaving(false);
+    }
+  }, [evoApi, fetchConfig]);
+
+  const removeWorld = useCallback(async (worldId) => {
+    await evoApi(`/worlds/${worldId}`, { method: "DELETE" });
+    setEvoWorlds(prev => prev.filter(w => w.id !== worldId));
+    if (evoSelected === worldId) { setEvoSelected(null); setEvoHistory([]); }
+  }, [evoApi, evoSelected]);
+
+  const resetWorld = useCallback(async (worldId) => {
+    const updated = await evoApi(`/worlds/${worldId}/reset`, { method: "POST" });
+    setEvoWorlds(prev => prev.map(w => w.id === worldId ? updated : w));
+    if (evoSelected === worldId) { setEvoHistory([]); setEvoMaturity(prev => { const n = {...prev}; delete n[worldId]; return n; }); }
+  }, [evoApi, evoSelected]);
+
+  useEffect(() => {
+    if (mode === "evolution") { fetchWorlds(); fetchConfig(); }
+  }, [mode, fetchWorlds, fetchConfig]);
+
   const soulFiles = {
     soul:     { content: buildSoulMd(soulData, worldSeed, genealogyData),   ...SOUL_TABS[0] },
     memory:   { content: buildMemoryMd(soulData, worldSeed, genealogyData), ...SOUL_TABS[1] },
@@ -673,7 +876,7 @@ export default function NutshellUniverse() {
             pointerEvents: "none", transition: "background 0.8s",
             animation: "glowPulse 4s ease-in-out infinite",
           }} />
-          <div style={{ fontSize: 9, letterSpacing: 8, color: "#2a2235", textTransform: "uppercase", marginBottom: 14, position: "relative" }}>
+          <div style={{ fontSize: 9, letterSpacing: 8, color: "#6a5875", textTransform: "uppercase", marginBottom: 14, position: "relative" }}>
             灵犀涵化炉 &nbsp;·&nbsp; 宇宙观测仪
           </div>
           <h1 style={{
@@ -685,12 +888,26 @@ export default function NutshellUniverse() {
           }}>
             果壳中的宇宙
           </h1>
-          <div style={{ fontSize: 11, color: "#2e2640", letterSpacing: 4, position: "relative" }}>
+          <div style={{ fontSize: 11, color: "#7a6a8a", letterSpacing: 4, position: "relative" }}>
             Universe in a Nutshell
           </div>
 
-          {/* Phase indicator */}
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, marginTop: 28, position: "relative" }}>
+          {/* Mode toggle */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 2, marginTop: 20, position: "relative" }}>
+            {[["character","灵魂锻造"],["evolution","世界演化"]].map(([m, label]) => (
+              <button key={m} onClick={() => setMode(m)} style={{
+                background: mode === m ? `${accentColor}18` : "none",
+                border: `1px solid ${mode === m ? accentColor + "66" : "#1a1628"}`,
+                color: mode === m ? accentColor : "#2e2640",
+                padding: "5px 22px 6px", fontSize: 10, letterSpacing: 2,
+                cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                transition: "all 0.3s",
+              }}>{label}</button>
+            ))}
+          </div>
+
+          {/* Phase indicator — character mode only */}
+          {mode === "character" && <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 0, marginTop: 20, position: "relative" }}>
             {[
               { id: "select", label: "层⁶  选择宇宙" },
               { id: "world",  label: "层⁵  溯源谱系" },
@@ -722,13 +939,13 @@ export default function NutshellUniverse() {
                 </div>
               );
             })}
-          </div>
+          </div>}
         </header>
 
         {/* ── SELECT PHASE ── */}
-        {(phase === "select" || phase === "gen_world") && (
+        {mode === "character" && (phase === "select" || phase === "gen_world") && (
           <div className="fade-up" style={{ paddingTop: 36 }}>
-            <div style={{ fontSize: 11, letterSpacing: 4, color: "#2e2820", textTransform: "uppercase", textAlign: "center", marginBottom: 22 }}>
+            <div style={{ fontSize: 11, letterSpacing: 4, color: "#7a7060", textTransform: "uppercase", textAlign: "center", marginBottom: 22 }}>
               选择宇宙的意识形态基底
             </div>
 
@@ -841,7 +1058,7 @@ export default function NutshellUniverse() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16, marginTop: 4 }}>
               <div style={{ flex: 1, height: 1, background: "linear-gradient(to right, transparent, #1a1628)" }} />
-              <span style={{ fontSize: 9, color: "#2e2430", letterSpacing: 4, textTransform: "uppercase" }}>或输入任意传统</span>
+              <span style={{ fontSize: 9, color: "#7a6878", letterSpacing: 4, textTransform: "uppercase" }}>或输入任意传统</span>
               <div style={{ flex: 1, height: 1, background: "linear-gradient(to left, transparent, #1a1628)" }} />
             </div>
 
@@ -929,11 +1146,11 @@ export default function NutshellUniverse() {
         )}
 
         {/* ── WORLD PHASE ── */}
-        {(phase === "world" || phase === "input" || phase === "gen_soul") && worldSeed && (
+        {mode === "character" && (phase === "world" || phase === "input" || phase === "gen_soul") && worldSeed && (
           <div className="fade-up" style={{ paddingTop: 32 }}>
             {/* World header */}
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={{ fontSize: 10, letterSpacing: 5, color: "#2e2820", textTransform: "uppercase", marginBottom: 8 }}>世界种子已显现</div>
+              <div style={{ fontSize: 10, letterSpacing: 5, color: "#7a7060", textTransform: "uppercase", marginBottom: 8 }}>世界种子已显现</div>
               <h2 style={{ fontSize: 22, fontWeight: "normal", color: accentColor, letterSpacing: 2, margin: "0 0 8px",
                 textShadow: `0 0 30px ${accentColor}44` }}>
                 {worldSeed.tradition_name}
@@ -983,9 +1200,37 @@ export default function NutshellUniverse() {
               background: "#08070f", border: `1px solid ${accentColor}22`,
               borderRadius: 4, padding: "22px 24px", marginBottom: 16,
             }}>
-              <div style={{ fontSize: 11, letterSpacing: 4, color: "#2e2820", textTransform: "uppercase", marginBottom: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 11, letterSpacing: 4, color: "#7a7060", textTransform: "uppercase", marginBottom: 16, textAlign: "center" }}>
                 从这个宇宙中召唤一个存在
               </div>
+
+              {/* Evolution context badge */}
+              {(() => {
+                const tradKey = worldSeed?.tradition_key || selectedTrad;
+                const matched = evoWorlds.find(w =>
+                  w.tradition_key === tradKey ||
+                  w.tradition_key === selectedTrad ||
+                  w.seed?.tradition_name === worldSeed?.tradition_name
+                );
+                if (!matched || matched.pulse_count === 0) return null;
+                const STAGE_NAMES = ["萌芽", "理解", "推导", "超越", "涌现"];
+                return (
+                  <div style={{
+                    background: accentColor + "0a",
+                    border: `1px solid ${accentColor}33`,
+                    borderRadius: 3, padding: "7px 14px",
+                    marginBottom: 14, display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", background: accentColor, flexShrink: 0 }} />
+                    <span style={{ fontSize: 9, color: accentColor, letterSpacing: 1.5 }}>
+                      此世界已演化 {matched.pulse_count} 次脉冲 · 阶段：{STAGE_NAMES[matched.stage] ?? "萌芽"}
+                    </span>
+                    <span style={{ fontSize: 9, color: accentColor + "88", marginLeft: "auto" }}>
+                      演化历史将注入灵魂塑造
+                    </span>
+                  </div>
+                );
+              })()}
 
               <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
@@ -1083,11 +1328,11 @@ export default function NutshellUniverse() {
         )}
 
         {/* ── COMPLETE PHASE ── */}
-        {phase === "complete" && soulData && worldSeed && (
+        {mode === "character" && phase === "complete" && soulData && worldSeed && (
           <div className="fade-up" style={{ paddingTop: 28 }}>
             {/* Title */}
             <div style={{ textAlign: "center", marginBottom: 28 }}>
-              <div style={{ fontSize: 10, letterSpacing: 5, color: "#2e2820", textTransform: "uppercase", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, letterSpacing: 5, color: "#7a7060", textTransform: "uppercase", marginBottom: 8 }}>
                 果壳已成形
               </div>
               <h2 style={{ fontSize: 24, fontWeight: "normal", color: accentColor, letterSpacing: 2, margin: "0 0 6px",
@@ -1100,6 +1345,11 @@ export default function NutshellUniverse() {
               }}>
                 {soulData.world_bond}
               </div>
+              {evoSoulCtx && (
+                <div style={{ marginTop: 10, fontSize: 9, color: accentColor + "77", letterSpacing: 2 }}>
+                  ◎ 由 {evoSoulCtx.world.pulse_count} 次世界演化历史塑造 · {evoSoulCtx.events.length} 个真实事件注入
+                </div>
+              )}
             </div>
 
             {/* Three-column layout */}
@@ -1229,7 +1479,7 @@ export default function NutshellUniverse() {
                   marginTop: 12, background: "#060510",
                   border: "1px solid #1a1628", borderRadius: 3, padding: "14px 16px",
                 }}>
-                  <div style={{ fontSize: 10, color: "#2e2820", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>安装</div>
+                  <div style={{ fontSize: 10, color: "#7a7060", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8 }}>安装</div>
                   {[
                     `cp soul-${(soulData.character_name||"char").replace(/\s/g,"-")}.md ~/.openclaw/soul.md`,
                     `cp memory-${(soulData.character_name||"char").replace(/\s/g,"-")}.md ~/.openclaw/memory/init.md`,
@@ -1281,7 +1531,411 @@ export default function NutshellUniverse() {
             </div>
           </div>
         )}
-      </div>
+
+        {/* ── EVOLUTION PANEL ── */}
+        {mode === "evolution" && (() => {
+          const EVO_COLOR = "#7a6a3a";
+          const EVT = { tension: "张力", character_action: "角色行动", transcendence: "超越", knowledge: "知识", research: "研究" };
+
+          return (
+          <div className="fade-up" style={{ paddingTop: 32 }}>
+
+            {/* Toolbar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+              <div style={{ fontSize: 10, letterSpacing: 4, color: "#7a7060", textTransform: "uppercase" }}>
+                活跃世界 · {evoWorlds.length} 个
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={fetchWorlds} style={{
+                  background: "none", border: "1px solid #1a1628", color: "#7a6a8a",
+                  padding: "5px 14px", fontSize: 9, letterSpacing: 2, cursor: "pointer",
+                  borderRadius: 2, fontFamily: "inherit",
+                }}>↻ 刷新</button>
+                <button onClick={() => { setEvoSettings(v => !v); setEvoPicker(false); }} style={{
+                  background: evoSettings ? "#14111e" : "none",
+                  border: `1px solid ${evoSettings ? "#3a2a5a" : "#1a1628"}`,
+                  color: evoSettings ? "#8a7aaa" : "#6a5a7a",
+                  padding: "5px 12px", fontSize: 11, cursor: "pointer",
+                  borderRadius: 2, fontFamily: "inherit",
+                }}>⚙</button>
+                <button onClick={() => { setEvoPicker(v => !v); setEvoSettings(false); }} style={{
+                  background: `${accentColor}18`, border: `1px solid ${accentColor}55`, color: accentColor,
+                  padding: "5px 18px", fontSize: 9, letterSpacing: 2, cursor: "pointer",
+                  borderRadius: 2, fontFamily: "inherit",
+                }}>+ 添加世界</button>
+              </div>
+            </div>
+
+            {/* Settings panel */}
+            {evoSettings && (() => {
+              const draft = { ...evoConfig };
+              const INPUT = {
+                background: "#060510", border: "1px solid #1a1628", color: "#bba870",
+                padding: "6px 10px", fontSize: 11, borderRadius: 2, fontFamily: "inherit",
+                width: "100%", boxSizing: "border-box", outline: "none",
+              };
+              return (
+              <div style={{ background: "#0a0818", border: "1px solid #1e1a30", borderRadius: 4, padding: "20px 22px", marginBottom: 24 }}>
+                <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a6a8a", textTransform: "uppercase", marginBottom: 18 }}>
+                  引擎配置
+                  <span style={{ marginLeft: 12, color: evoConfig.has_key ? "#4a7a4a" : "#7a4a3a", fontSize: 9 }}>
+                    {evoConfig.has_key ? "● API Key 已配置" : "○ 未配置 — 使用 Mock 模式"}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>PROVIDER</div>
+                    <select defaultValue={evoConfig.provider} onChange={e => draft.provider = e.target.value} style={{ ...INPUT }}>
+                      <option value="anthropic">Anthropic</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>MODEL</div>
+                    <input defaultValue={evoConfig.model} onChange={e => draft.model = e.target.value} style={INPUT} placeholder="claude-sonnet-4-20250514" />
+                  </div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 9, color: "#6a5a7a", letterSpacing: 2, marginBottom: 5 }}>API KEY</div>
+                  <input
+                    type="password"
+                    defaultValue={evoConfig.api_key.startsWith("••••") ? "" : evoConfig.api_key}
+                    onChange={e => draft.api_key = e.target.value}
+                    placeholder={evoConfig.api_key || "sk-ant-... 或 sk-..."}
+                    style={INPUT}
+                    autoComplete="off"
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <button
+                    onClick={() => saveConfig(draft)}
+                    disabled={evoConfigSaving}
+                    style={{
+                      background: "#1a1430", border: "1px solid #3a2a5a", color: "#8a7aaa",
+                      padding: "6px 20px", fontSize: 10, letterSpacing: 2, cursor: "pointer",
+                      borderRadius: 2, fontFamily: "inherit", opacity: evoConfigSaving ? 0.5 : 1,
+                    }}
+                  >
+                    {evoConfigSaving ? "保存中…" : "保存"}
+                  </button>
+                  {evoConfigMsg && (
+                    <span style={{ fontSize: 9, color: evoConfigMsg.includes("失败") ? "#7a4a3a" : "#4a7a4a", letterSpacing: 1 }}>
+                      {evoConfigMsg}
+                    </span>
+                  )}
+                </div>
+              </div>
+              );
+            })()}
+
+            {/* Tradition picker */}
+            {evoPicker && (
+              <div style={{ background: "#0c0a18", border: "1px solid #1a1628", borderRadius: 4, padding: "18px 20px", marginBottom: 24 }}>
+                <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a7060", marginBottom: 14, textTransform: "uppercase" }}>
+                  选择传统 → 自动加载内置世界种子
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {TRADITIONS.map(t => (
+                    <button key={t.id} onClick={() => createEvoWorld(t.id)} className="trad-btn" style={{
+                      background: "none", border: "1px solid #1a1628", color: "#4a4040",
+                      padding: "5px 12px", fontSize: 10, cursor: "pointer", borderRadius: 2,
+                      fontFamily: "inherit", transition: "all 0.2s",
+                    }}>
+                      {t.glyph} {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {evoLoading && (
+              <div style={{ textAlign: "center", color: "#6a6560", fontSize: 10, padding: 32, letterSpacing: 3 }}>
+                读取世界数据…
+              </div>
+            )}
+            {!evoLoading && evoWorlds.length === 0 && (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "#5a5068", fontSize: 11, letterSpacing: 3 }}>
+                尚无世界 · 点击「添加世界」开始
+              </div>
+            )}
+
+            {/* World cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {evoWorlds.map(w => {
+                const trad       = TRADITIONS.find(t => t.id === w.tradition_key);
+                const cardColor  = trad?.color ?? "#c9a84c";
+                const isGen      = evoGenerating === w.id;
+                const isSelected = evoSelected === w.id;
+                const isSyncing  = evoSyncTarget === w.id;
+                const genRes     = evoGenResult?.worldId === w.id ? evoGenResult : null;
+                const totalEvts  = evoHistory.length > 0 && isSelected ? evoHistory.length : (w.pulse_count * 2); // approx
+                const lastDate   = w.last_pulse_at ? new Date(w.last_pulse_at).toLocaleDateString("zh-CN") : null;
+
+                return (
+                  <div key={w.id} style={{
+                    background: "#080614",
+                    border: `1px solid ${isSelected || isSyncing ? cardColor + "44" : "#14111e"}`,
+                    borderRadius: 6, overflow: "hidden", transition: "border-color 0.3s",
+                  }}>
+
+                    {/* ── Card header ── */}
+                    <div style={{ padding: "16px 20px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                        <span style={{ fontSize: 22, lineHeight: 1 }}>{trad?.glyph ?? "◎"}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, color: cardColor, letterSpacing: 1 }}>
+                            {trad?.label ?? w.tradition_key}
+                          </div>
+                          <div style={{ fontSize: 8, color: "#6a6878", marginTop: 2 }}>
+                            {w.pulse_count > 0
+                              ? `已生成 ${w.pulse_count} 批事件${lastDate ? ` · ${lastDate}` : ""}`
+                              : "尚无事件"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Gen result — inline */}
+                      {genRes && !genRes.error && genRes.events.length > 0 && (
+                        <div style={{
+                          background: "#080e08", border: "1px solid #162416",
+                          borderRadius: 3, padding: "10px 12px", marginBottom: 12,
+                        }}>
+                          <div style={{ fontSize: 9, color: "#3a6a3a", letterSpacing: 1, marginBottom: 8 }}>
+                            生成了 {genRes.events.length} 个新事件
+                          </div>
+                          {genRes.events.slice(0, 3).map((e, i) => (
+                            <div key={i} style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "flex-start" }}>
+                              <span style={{
+                                fontSize: 7, color: cardColor, background: cardColor + "22",
+                                padding: "1px 5px", borderRadius: 2, flexShrink: 0, marginTop: 1, whiteSpace: "nowrap",
+                              }}>
+                                {EVT[e.event_type] ?? e.event_type}
+                              </span>
+                              <span style={{ fontSize: 9, color: "#8a886a", lineHeight: 1.6 }}>
+                                {(e.narrative ?? "").slice(0, 110)}{(e.narrative ?? "").length > 110 ? "…" : ""}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {genRes?.error && (
+                        <div style={{
+                          background: "#0e0808", border: "1px solid #2e1a1a",
+                          borderRadius: 3, padding: "8px 12px", marginBottom: 12,
+                          fontSize: 9, color: "#7a4a3a",
+                        }}>
+                          {genRes.error}
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={() => generateEvents(w.id)}
+                          disabled={!!evoGenerating}
+                          style={{
+                            flex: 2,
+                            background: isGen ? cardColor + "22" : cardColor + "14",
+                            border: `1px solid ${cardColor}44`, color: cardColor,
+                            padding: "7px 0", fontSize: 10, letterSpacing: 2,
+                            cursor: evoGenerating ? "not-allowed" : "pointer",
+                            borderRadius: 2, fontFamily: "inherit",
+                            opacity: evoGenerating && !isGen ? 0.25 : 1,
+                            transition: "all 0.3s",
+                          }}
+                        >
+                          {isGen ? "生成中…" : "◎ 生成事件"}
+                        </button>
+                        <button
+                          onClick={() => selectEvoWorld(w.id)}
+                          style={{
+                            flex: 1,
+                            background: isSelected ? "#14111e" : "none",
+                            border: "1px solid #1a1628",
+                            color: isSelected ? "#8a7a9a" : "#6a5a7a",
+                            padding: "7px 0", fontSize: 9, letterSpacing: 2,
+                            cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                          }}
+                        >
+                          {isSelected ? "▲ 收起" : "▼ 事件"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (evoSyncTarget === w.id) { setEvoSyncTarget(null); setEvoSyncResult(null); }
+                            else { setEvoSyncTarget(w.id); setEvoSyncResult(null); }
+                          }}
+                          style={{
+                            flex: 1,
+                            background: isSyncing ? cardColor + "22" : "none",
+                            border: `1px solid ${isSyncing ? cardColor + "66" : "#1a1628"}`,
+                            color: isSyncing ? cardColor : "#6a5a7a",
+                            padding: "7px 0", fontSize: 9, letterSpacing: 1,
+                            cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          ⇄ 同步记忆
+                        </button>
+                        <button
+                          onClick={() => { if (window.confirm("归零演化次数并清除所有事件历史？")) resetWorld(w.id); }}
+                          style={{
+                            flex: 1,
+                            background: "none", border: "1px solid #2a1e1e",
+                            color: "#6a4040", padding: "7px 0", fontSize: 9,
+                            letterSpacing: 1, cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                          }}
+                        >
+                          ↺ 归零
+                        </button>
+                        <button
+                          onClick={() => { if (window.confirm("移除此世界种子？此操作不可撤销。")) removeWorld(w.id); }}
+                          style={{
+                            flex: 1,
+                            background: "none", border: "1px solid #2e1a1a",
+                            color: "#7a3a3a", padding: "7px 0", fontSize: 9,
+                            letterSpacing: 1, cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                          }}
+                        >
+                          ✕ 移除
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── Event history ── */}
+                    {isSelected && (
+                      <div style={{ borderTop: "1px solid #14111e", padding: "14px 20px 18px", maxHeight: 340, overflowY: "auto" }}>
+                        {evoHistory.length === 0 ? (
+                          <div style={{ fontSize: 9, color: "#5a5068", textAlign: "center", padding: "12px 0", letterSpacing: 2 }}>
+                            尚无事件 · 点击「生成事件」让世界开始
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            {evoHistory.map(e => (
+                              <div key={e.id} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                                <span style={{
+                                  fontSize: 7, color: cardColor, background: cardColor + "18",
+                                  padding: "2px 6px", borderRadius: 2, flexShrink: 0, marginTop: 2,
+                                  letterSpacing: 0.5, whiteSpace: "nowrap",
+                                }}>
+                                  {EVT[e.event_type] ?? e.event_type}
+                                </span>
+                                <div style={{ fontSize: 10, color: "#3a3430", lineHeight: 1.75 }}>
+                                  {(e.narrative ?? "").slice(0, 220)}
+                                  {(e.narrative ?? "").length > 220 ? "…" : ""}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── Memory sync panel ── */}
+                    {isSyncing && (
+                      <div style={{ borderTop: "1px solid #14111e", padding: "18px 20px 20px" }}>
+                        <div style={{ fontSize: 9, letterSpacing: 3, color: "#7a7060", marginBottom: 14, textTransform: "uppercase" }}>
+                          同步世界事件到角色记忆
+                        </div>
+
+                        {/* Character name */}
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 9, color: "#3a3020", letterSpacing: 1, marginBottom: 5 }}>角色名称</div>
+                          <input
+                            value={evoSyncCharName}
+                            onChange={e => setEvoSyncCharName(e.target.value)}
+                            placeholder="输入角色名，如：哪吒、爱德华·艾尔利克…"
+                            style={{
+                              width: "100%", boxSizing: "border-box",
+                              background: "#060510", border: "1px solid #1a1628",
+                              color: "#ddd0a8", padding: "9px 12px",
+                              fontSize: 12, fontFamily: "inherit", borderRadius: 2, outline: "none",
+                            }}
+                            onFocus={e => e.target.style.borderColor = cardColor + "66"}
+                            onBlur={e => e.target.style.borderColor = "#1a1628"}
+                          />
+                        </div>
+
+                        {/* Existing memory */}
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 9, color: "#3a3020", letterSpacing: 1, marginBottom: 5 }}>
+                            现有 memory.md（可选，粘贴后同步内容会与之衔接）
+                          </div>
+                          <textarea
+                            value={evoSyncMemory}
+                            onChange={e => setEvoSyncMemory(e.target.value)}
+                            placeholder="粘贴角色现有的 memory.md 内容，或留空生成初始记忆…"
+                            rows={4}
+                            style={{
+                              width: "100%", boxSizing: "border-box",
+                              background: "#060510", border: "1px solid #1a1628",
+                              color: "#ddd0a8", padding: "9px 12px",
+                              fontSize: 11, fontFamily: "inherit", borderRadius: 2,
+                              outline: "none", resize: "vertical",
+                            }}
+                            onFocus={e => e.target.style.borderColor = cardColor + "66"}
+                            onBlur={e => e.target.style.borderColor = "#1a1628"}
+                          />
+                        </div>
+
+                        {/* Sync button */}
+                        <button
+                          onClick={() => syncMemory(w.id)}
+                          disabled={evoSyncing || !evoSyncCharName.trim()}
+                          style={{
+                            background: evoSyncCharName.trim() ? cardColor + "22" : "none",
+                            border: `1px solid ${evoSyncCharName.trim() ? cardColor + "55" : "#1a1628"}`,
+                            color: evoSyncCharName.trim() ? cardColor : "#2e2640",
+                            padding: "8px 24px", fontSize: 10, letterSpacing: 2,
+                            cursor: evoSyncing || !evoSyncCharName.trim() ? "not-allowed" : "pointer",
+                            borderRadius: 2, fontFamily: "inherit", transition: "all 0.3s",
+                          }}
+                        >
+                          {evoSyncing ? "生成中…" : "生成同步内容"}
+                        </button>
+
+                        {/* Sync result */}
+                        {evoSyncResult?.worldId === w.id && evoSyncResult.content && (
+                          <div style={{ marginTop: 14 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                              <span style={{ fontSize: 9, color: cardColor, letterSpacing: 2 }}>新增记忆条目</span>
+                              <button
+                                onClick={() => navigator.clipboard.writeText(evoSyncResult.content)}
+                                style={{
+                                  background: "none", border: `1px solid ${cardColor}44`, color: cardColor,
+                                  padding: "3px 12px", fontSize: 8, letterSpacing: 1,
+                                  cursor: "pointer", borderRadius: 2, fontFamily: "inherit",
+                                }}
+                              >复制</button>
+                            </div>
+                            <div style={{
+                              background: "#060510", border: "1px solid #1a1628",
+                              borderRadius: 3, padding: "12px 14px",
+                              fontSize: 11, color: "#8a7a58", lineHeight: 1.8,
+                              maxHeight: 280, overflowY: "auto",
+                              whiteSpace: "pre-wrap", fontFamily: "inherit",
+                            }}>
+                              {evoSyncResult.content}
+                            </div>
+                          </div>
+                        )}
+                        {evoSyncResult?.worldId === w.id && evoSyncResult.error && (
+                          <div style={{ marginTop: 10, fontSize: 9, color: "#7a4a3a" }}>
+                            {evoSyncResult.error}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          );
+        })()}
+
+      </div>{/* /main container */}
 
       {/* Footer */}
       <div style={{
@@ -1289,7 +1943,7 @@ export default function NutshellUniverse() {
         padding: "7px 0", background: "#060510",
         borderTop: "1px solid #1a1628", textAlign: "center", zIndex: 10,
       }}>
-        <span style={{ fontSize: 9, color: "#1a1628", letterSpacing: 5, textTransform: "uppercase" }}>
+        <span style={{ fontSize: 9, color: "#5a5068", letterSpacing: 5, textTransform: "uppercase" }}>
           神话学 · 比较宗教学 · 民俗文学 · 唯识论 · 灵犀世界
         </span>
       </div>

@@ -83,7 +83,7 @@ export class EvolutionEngine {
     };
 
     this.db = new WorldStateDB(this.config);
-    this.pulse = new PulseScheduler(this.config, this.db, defaultSearch);
+    this.pulse = new PulseScheduler(this.config, this.db, this.config.searchFn ?? defaultSearch);
     this.maturityScorer = new MaturityScorer(this.config, this.db);
     this.eventGenerator = new EventGenerator(this.config);
   }
@@ -178,6 +178,16 @@ export class EvolutionEngine {
   /** Manually create a branch world */
   branch(world_id: string): WorldState {
     return this.db.branchWorld(world_id);
+  }
+
+  /** Delete a world and all associated data */
+  deleteWorld(world_id: string): void {
+    this.db.deleteWorld(world_id);
+  }
+
+  /** Reset pulse count and clear evolution history */
+  resetWorld(world_id: string): void {
+    this.db.resetPulseCount(world_id);
   }
 
   // ─── CLEANUP ─────────────────────────────────────────────────────────────────

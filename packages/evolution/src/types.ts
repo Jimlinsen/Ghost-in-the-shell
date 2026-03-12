@@ -238,6 +238,10 @@ export interface EvolutionConfig {
   tension_threshold: number;
   /** Language for narratives (default: "zh") */
   language: "zh" | "en";
+  /** Optional custom search function (overrides default DuckDuckGo search) */
+  searchFn?: (query: string) => Promise<RawSearchResult[]>;
+  /** Disable automatic world bifurcation on tension overflow */
+  skip_bifurcation?: boolean;
 }
 
 export const DEFAULT_EVOLUTION_CONFIG: Partial<EvolutionConfig> = {

@@ -99,7 +99,9 @@ export class PulseScheduler {
     });
 
     // ── 6. Check for bifurcation ─────────────────────────────────────────────
-    await this.bifurcationDetector.check(world_id);
+    if (!this.config.skip_bifurcation) {
+      await this.bifurcationDetector.check(world_id);
+    }
 
     return {
       world_id,
